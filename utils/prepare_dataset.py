@@ -1,0 +1,236 @@
+import os
+import shutil
+
+from dataset.dataset import LightweightDataset, CustomDataset
+
+def process_linemod_to_yolo_fast(dataset_root, yolo_dataset_root, max_samples_per_split=None):
+    """
+    Converts the LineMOD preprocessed dataset to YOLO format quickly by directly copying files.
+
+    Args:
+        dataset_root (str): Path to the root of the LineMOD preprocessed dataset.
+        yolo_dataset_root (str): Path where the YOLO formatted dataset will be saved.
+        max_samples_per_split (int, optional): Maximum number of samples to process per split (train/test).
+                                               If None, processes all samples.
+    
+    Returns:
+        str: Path to the generated YOLO dataset YAML configuration file.
+    """
+
+    # Cleanup and create YOLO dataset directory
+    if os.path.exists(yolo_dataset_root):
+        print(f"Removing existing YOLO dataset directory: {yolo_dataset_root}")
+        shutil.rmtree(yolo_dataset_root)
+    os.makedirs(yolo_dataset_root, exist_ok=True)
+
+    # Mapping from object IDs to class IDs
+    data_dir = os.path.join(dataset_root, 'Linemod_preprocessed', 'data')
+    existing_obj_ids = sorted([int(x) for x in os.listdir(data_dir) if x.isdigit()])
+    obj_id_to_class_id = {oid: i for i, oid in enumerate(existing_obj_ids)}
+    print(f"Class Mapping found: {obj_id_to_class_id}")
+
+    class_names = [
+        'Ape',
+        'Benchvise',
+        'Bowl',
+        'Cam',
+        'Can',         
+        'Cat',
+        'Cup',
+        'Driller',
+        'Duck',
+        'Eggbox',
+        'Glue',
+        'Holepuncher',
+        'Iron',
+        'Lamp',
+        'Phone'
+    ]
+
+    # Processing each split
+    for split_type in ['train', 'test']:
+        yolo_split = 'train' if split_type == 'train' else 'val'
+
+        images_dir = os.path.join(yolo_dataset_root, 'images', yolo_split)
+        labels_dir = os.path.join(yolo_dataset_root, 'labels', yolo_split)
+        os.makedirs(images_dir, exist_ok=True)
+        os.makedirs(labels_dir, exist_ok=True)
+
+        if not os.path.exists(dataset_root):
+            print(f"Error: Dataset root path does not exist: {dataset_root}.")
+            return
+    
+        # Use the Lightweight dataset for faster processing
+        dataset = LightweightDataset(dataset_root, split=split_type)
+
+        num_samples = len(dataset)
+        if max_samples_per_split:
+            num_samples = min(len(dataset), max_samples_per_split)
+
+        print(f"Processing {num_samples} samples for {yolo_split}...")
+
+        for i in range(num_samples):
+            sample = dataset[i]
+
+            # Unpack simple data
+            src_path = sample['rgb_path']
+            obj_id = sample['obj_id']
+            frame_idx = sample['frame_idx']
+            obj_bb = sample['obj_bb'].numpy() # [x_min, y_min, width, height]
+
+            # Use a unique, common base name for both image and label
+            base_filename = f"obj_{obj_id:02d}_{frame_idx:04d}"
+
+            yolo_class_id = obj_id_to_class_id[obj_id]
+
+            # YOLO Format Calculations
+            img_width = 640
+            img_height = 480
+            x_min, y_min, bb_width, bb_height = obj_bb
+
+            x_center = (x_min + bb_width / 2) / img_width
+            y_center = (y_min + bb_height / 2) / img_height
+            norm_width = bb_width / img_width
+            norm_height = bb_height / img_height
+
+            # Clamp values to [0, 1]
+            x_center = max(0.0, min(1.0, x_center))
+            y_center = max(0.0, min(1.0, y_center))
+            norm_width = max(0.0, min(1.0, norm_width))
+            norm_height = max(0.0, min(1.0, norm_height))
+
+            # Write Label File
+            label_path = os.path.join(labels_dir, f"{base_filename}.txt")
+            with open(label_path, 'a') as f:
+                f.write(f"{yolo_class_id} {x_center} {y_center} {norm_width} {norm_height}\n")
+
+            # Copy Image
+            shutil.copy(src_path, os.path.join(images_dir, f"{base_filename}.png"))
+
+            if (i+1) % 1000 == 0:
+                print(f"  Converted {i+1} files...")
+
+    return create_yaml(yolo_dataset_root, class_names)
+
+def process_linemod_to_yolo(dataset_root, yolo_dataset_root, max_samples_per_split=None):
+    """
+    Slow but clear conversion of LineMOD preprocessed dataset to YOLO format.
+    """
+
+    # Cleanup and create YOLO dataset directory
+    if os.path.exists(yolo_dataset_root):
+        print(f"Removing existing YOLO dataset directory: {yolo_dataset_root}")
+        shutil.rmtree(yolo_dataset_root)
+    os.makedirs(yolo_dataset_root, exist_ok=True)
+
+    # Class mapping: Create a consistent map from obj_id -> yolo_class_id (0, 1, 2...)
+    data_dir = os.path.join(dataset_root, 'Linemod_preprocessed', 'data')
+    existing_obj_ids = sorted([int(x) for x in os.listdir(data_dir) if x.isdigit()])
+    obj_id_to_class_id = {oid: i for i, oid in enumerate(existing_obj_ids)}
+    print(f"Class Mapping found: {obj_id_to_class_id}")
+
+    class_names = [
+        'Ape',
+        'Benchvise',
+        'Bowl',
+        'Cam',
+        'Can',         
+        'Cat',
+        'Cup',
+        'Driller',
+        'Duck',
+        'Eggbox',
+        'Glue',
+        'Holepuncher',
+        'Iron',
+        'Lamp',
+        'Phone'
+    ]
+
+    # Processing each split
+    for split_type in ['train', 'test']:
+        yolo_split_name = 'train' if split_type == 'train' else 'val'
+
+        # Create directories
+        images_dir = os.path.join(yolo_dataset_root, 'images', yolo_split_name)
+        labels_dir = os.path.join(yolo_dataset_root, 'labels', yolo_split_name)
+        os.makedirs(images_dir, exist_ok=True)
+        os.makedirs(labels_dir, exist_ok=True)
+
+        print(f"Processing {split_type} split into {yolo_split_name}...")
+        dataset = CustomDataset(dataset_root, split=split_type)
+
+        # Limit samples for testing if needed
+        num_samples = len(dataset)
+        if max_samples_per_split is not None:
+            num_samples = min(len(dataset), max_samples_per_split)
+
+        for i in range(num_samples):
+            sample = dataset[i]
+            obj_id = sample['obj_id']
+            frame_idx = sample['frame_idx']
+            obj_bb = sample['obj_bb'].numpy() # [x_min, y_min, width, height]
+
+            # Use a unique, common base name for both image and label
+            base_filename = f"obj_{obj_id:02d}_{frame_idx:04d}"
+
+            yolo_class_id = obj_id_to_class_id[obj_id]
+
+            # YOLO Format Calculations
+            img_width = 640
+            img_height = 480
+            x_min, y_min, bb_width, bb_height = obj_bb
+
+            x_center = (x_min + bb_width / 2) / img_width
+            y_center = (y_min + bb_height / 2) / img_height
+            norm_width = bb_width / img_width
+            norm_height = bb_height / img_height
+
+            # Clamp values to [0, 1]
+            x_center = max(0.0, min(1.0, x_center))
+            y_center = max(0.0, min(1.0, y_center))
+            norm_width = max(0.0, min(1.0, norm_width))
+            norm_height = max(0.0, min(1.0, norm_height))
+
+            # Write Label File
+            label_path = os.path.join(labels_dir, f"{base_filename}.txt")
+            with open(label_path, 'a') as f:
+                f.write(f"{yolo_class_id} {x_center} {y_center} {norm_width} {norm_height}\n")
+
+            # Save Image File
+            rgb_filename = f"{frame_idx:04d}.png"
+            src_img_path = os.path.join(data_dir, f'{obj_id:02d}', 'rgb', rgb_filename)
+            dst_img_path = os.path.join(images_dir, f"{base_filename}.png")
+
+            # Copy/Save image
+            shutil.copy(src_img_path, dst_img_path)
+
+            if (i + 1) % 100 == 0:
+                print(f"  Processed {i+1}/{num_samples} samples.")
+
+    return create_yaml(yolo_dataset_root, class_names)
+
+def create_yaml(root, class_names):
+    """
+    Creates a YOLO dataset YAML configuration file.
+
+    Args:
+        root (str): Root directory of the YOLO dataset.
+        class_names (list): List of class names.
+    Returns:
+        str: Path to the generated YAML file.
+    """
+
+    yaml_path = os.path.join(root, 'data.yaml')
+
+    with open(yaml_path, 'w') as f:
+        f.write(f"path: {os.path.abspath(root)}\n")
+        f.write("train: images/train\n")
+        f.write("val: images/val\n")
+        f.write(f"nc: {len(class_names)}\n")
+        f.write("names:\n")
+        for i, name in enumerate(class_names):
+            f.write(f"  {i}: {name}\n")
+    
+    print(f"Dataset generation complete. Config saved to {yaml_path}.")
+    return yaml_path

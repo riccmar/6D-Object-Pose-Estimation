@@ -1,1 +1,14 @@
-
+torch
+torchvision
+numpy
+pandas
+opencv-python
+matplotlib
+pillow
+plotly
+ultralytics
+wandb
+pyyaml
+tqdm
+scikit-learn
+gdown
