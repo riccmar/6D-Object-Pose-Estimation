@@ -63,7 +63,7 @@ def yolo_finetuning(use_wandb=False, device='cpu', epochs=10, batch_size=16, exp
     epochs = epochs
     batch_size = batch_size
     imgsz = 640
-    project_name = 'YOLO_LineMod_Finetuning'
+    project_name = 'YOLO-LineMod-Finetuning'
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     run_name = f"yolo_linemod_e{epochs}_b{batch_size}_t{timestamp}"
 
