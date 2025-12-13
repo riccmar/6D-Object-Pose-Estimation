@@ -13,8 +13,8 @@ def download_linemod_preprocessed_dataset(output_dir="data"):
     # Create the directory structure if it doesn't exist
     target_dir = os.path.join(output_dir, "linemod")
 
-    if not target_dir.exists():
-        os.makedir(target_dir)
+    if not os.path.exists(target_dir):
+        os.makedirs(target_dir, exist_ok=True)
         print(f"Created directory: {target_dir}.")
 
     # Define the file path and URL

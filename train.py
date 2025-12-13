@@ -1,18 +1,23 @@
 import os
 import torch
 import wandb
+import argparse
+import shutil
+from datetime import datetime
 from ultralytics import YOLO
 
 from utils.prepare_dataset import prepare_linemod_dataset
 
-def yolo_finetuning(use_wandb=False, device='cpu'):
+def yolo_finetuning(use_wandb=False, device='cpu', epochs=10, batch_size=16, export_path=None):
     """
     Fine-tunes a YOLO model on the LineMod dataset.
     
     Args:
-        data_yaml_path (str): Path to the data.yaml file created by the preparation step.
         use_wandb (bool): Whether to enable WandB logging.
         device (str): Device to use for training ('cpu' or 'cuda').
+        epochs (int): Number of training epochs.
+        batch_size (int): Batch size for training.
+        export_path (str): Optional path to export the best model (e.g., shared drive).
     
     Returns:
         str: Path to the directory where results are saved.
@@ -55,11 +60,12 @@ def yolo_finetuning(use_wandb=False, device='cpu'):
     model = YOLO(model_name)
 
     # Run Training
-    epochs = 10
-    batch_size = 16
+    epochs = epochs
+    batch_size = batch_size
     imgsz = 640
     project_name = 'YOLO_LineMod_Finetune'
-    run_name = f"yolo_linemod_e{epochs}_b{batch_size}"
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    run_name = f"yolo_linemod_e{epochs}_b{batch_size}_t{timestamp}"
 
     print(f"Starting YOLO finetuning.")
     results = model.train(
@@ -77,19 +83,53 @@ def yolo_finetuning(use_wandb=False, device='cpu'):
     save_dir = str(results.save_dir)
     print(f"Training completed. Results saved to: {save_dir}")
     
+    # Export Model to Shared Drive
+    if export_path:
+        if os.path.exists(export_path):
+            best_model_path = os.path.join(save_dir, 'weights', 'best.pt')
+            
+            if os.path.exists(best_model_path):
+                new_filename = f"{run_name}.pt"
+                dest_path = os.path.join(export_path, new_filename)
+                
+                try:
+                    shutil.copy(best_model_path, dest_path)
+                    print(f"Model successfully exported to: {dest_path}")
+                except Exception as e:
+                    print(f"Error exporting model: {e}")
+            else:
+                print(f"Warning: Could not find best model at {best_model_path}")
+        else:
+            print(f"Warning: Export path {export_path} does not exist.")
+
     return save_dir
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--wandb', default='false', help='Enable WandB logging')
+    parser.add_argument('--epochs', type=int, default=10, help='Number of training epochs')
+    parser.add_argument('--batch_size', type=int, default=16, help='Batch size for training')
+    parser.add_argument('--export_path', type=str, default=None, help='Path to export the trained model (e.g. shared drive)')
+    
+    args = parser.parse_args()
+
     # WandB Configuration
-    WANDB_FLAG = True  # Set to True to enable WandB logging
+    WANDB_FLAG = args.wandb.lower() in {"1", "true", "yes"}  # Set to True to enable WandB logging
     
     # Setup Device
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"Using device: {device}")
 
+    epochs = args.epochs
+    batch_size = args.batch_size
+    export_path = args.export_path
+
     # Run Training
     yolo_finetuning(
         use_wandb=WANDB_FLAG,
-        device=device
+        device=device,
+        epochs=epochs,
+        batch_size=batch_size,
+        export_path=export_path
     )
