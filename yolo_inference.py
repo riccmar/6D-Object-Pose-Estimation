@@ -78,7 +78,10 @@ def yolo_inference(model_path, device='cpu', conf=0.5, num_samples=3):
         plt.title(f"Prediction Sample {i+1}")
 
     plt.tight_layout()
-    plt.show()
+    
+    output_filename = 'inference_results.png'
+    plt.savefig(output_filename)
+    print(f"Inference results saved to: {output_filename}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

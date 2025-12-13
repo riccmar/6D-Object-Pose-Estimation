@@ -48,6 +48,8 @@ def yolo_evaluation(model_path, device='cpu', batch_size=16):
         split='val',     # Use the validation split (which contains your test data)
         imgsz=640,
         batch=batch_size,
+        conf=0.001,      # Confidence threshold
+        iou=0.6,         # IoU threshold for NMS
         plots=True,      # Save plots like confusion matrices
         device=device
     )
@@ -87,7 +89,5 @@ if __name__ == "__main__":
     yolo_evaluation(
         model_path=args.model_path,
         device=device,
-        batch_size=args.batch_size,
-        conf=args.conf,
-        iou=args.iou
+        batch_size=args.batch_size
     )
