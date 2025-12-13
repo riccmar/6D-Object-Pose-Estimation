@@ -6,7 +6,7 @@ import shutil
 from datetime import datetime
 from ultralytics import YOLO
 
-from utils.prepare_dataset import prepare_linemod_dataset
+from utils.prepare_dataset import process_linemod_to_yolo_fast
 
 def yolo_finetuning(use_wandb=False, device='cpu', epochs=10, batch_size=16, export_path=None):
     """
@@ -27,7 +27,7 @@ def yolo_finetuning(use_wandb=False, device='cpu', epochs=10, batch_size=16, exp
     dataset_root = 'data/linemod'
     yolo_dataset_root = 'data/yolo_dataset'
 
-    data_yaml_path = prepare_linemod_dataset(dataset_root, yolo_dataset_root)
+    data_yaml_path = process_linemod_to_yolo_fast(dataset_root, yolo_dataset_root)
     
     # Check if dataset config exists
     if not os.path.exists(data_yaml_path):
@@ -63,7 +63,7 @@ def yolo_finetuning(use_wandb=False, device='cpu', epochs=10, batch_size=16, exp
     epochs = epochs
     batch_size = batch_size
     imgsz = 640
-    project_name = 'YOLO_LineMod_Finetune'
+    project_name = 'YOLO_LineMod_Finetuning'
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     run_name = f"yolo_linemod_e{epochs}_b{batch_size}_t{timestamp}"
 
@@ -118,8 +118,18 @@ if __name__ == "__main__":
     WANDB_FLAG = args.wandb.lower() in {"1", "true", "yes"}  # Set to True to enable WandB logging
     
     # Setup Device
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    print(f"Using device: {device}")
+    if torch.cuda.is_available():
+        gpu_count = torch.cuda.device_count()
+
+        if gpu_count > 1:
+            device = [i for i in range(gpu_count)] # Restituisce [0, 1] se hai 2 GPU
+            print(f"Using multiple GPUs: {device}")
+        else:
+            device = 0
+            print(f"Using single GPU: {device}")
+    else:
+        device = 'cpu'
+        print(f"Using device: {device}")
 
     epochs = args.epochs
     batch_size = args.batch_size
