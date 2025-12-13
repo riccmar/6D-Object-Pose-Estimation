@@ -127,6 +127,9 @@ if __name__ == "__main__":
         else:
             device = 0
             print(f"Using single GPU: {device}")
+    elif torch.backends.mps.is_available():
+        device = 'mps'
+        print(f"Using MPS device: {device}")
     else:
         device = 'cpu'
         print(f"Using device: {device}")
