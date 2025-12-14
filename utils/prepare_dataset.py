@@ -1,5 +1,6 @@
 import os
 import shutil
+import yaml
 
 from dataset.dataset import LightweightDataset, CustomDataset
 
@@ -29,23 +30,15 @@ def process_linemod_to_yolo_fast(dataset_root, yolo_dataset_root, max_samples_pe
     obj_id_to_class_id = {oid: i for i, oid in enumerate(existing_obj_ids)}
     print(f"Class Mapping found: {obj_id_to_class_id}")
 
-    class_names = [
-        'Ape',
-        'Benchvise',
-        'Bowl',
-        'Cam',
-        'Can',         
-        'Cat',
-        'Cup',
-        'Driller',
-        'Duck',
-        'Eggbox',
-        'Glue',
-        'Holepuncher',
-        'Iron',
-        'Lamp',
-        'Phone'
-    ]
+    models_info_path = os.path.join(dataset_root, 'Linemod_preprocessed', 'models', 'models_info.yml')
+    with open(models_info_path, 'r') as f:
+        models_info = yaml.safe_load(f)
+
+    class_names = []
+    for oid in existing_obj_ids:
+        # Get name from info, or fallback to "Object X"
+        name = models_info.get(oid, {}).get('name', f"Object {oid}")
+        class_names.append(name)
 
     # Processing each split
     for split_type in ['train', 'test']:
