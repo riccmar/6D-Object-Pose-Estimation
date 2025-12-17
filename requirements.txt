@@ -12,3 +12,5 @@ pyyaml
 tqdm
 scikit-learn
 gdown
+trimesh
+scipy
