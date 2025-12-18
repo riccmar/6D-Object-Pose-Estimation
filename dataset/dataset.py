@@ -4,23 +4,21 @@ import numpy as np
 import torch
 import cv2
 import torchvision.transforms as transforms
+import hashlib
 from PIL import Image
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 
 
-class LightweightDataset(Dataset):
+class YoloDataset(Dataset):
     """
     Lightweight version of Custom Dataset that only returns RGB image paths and object bounding boxes.
     Used in YOLO finetuning to speed up data loading.
     """
 
-    def __init__(self, dataset_root, split='train', train_ratio=0.8, seed=42):
+    def __init__(self, dataset_root, split='train'):
         self.dataset_root = dataset_root
         self.split = split
-
-        self.train_ratio = train_ratio
-        self.seed = seed
 
         self.data_dir = os.path.join(dataset_root, 'Linemod_preprocessed', 'data')
         self.model_dir = os.path.join(dataset_root, 'Linemod_preprocessed', 'models')
@@ -31,7 +29,7 @@ class LightweightDataset(Dataset):
             self.models_info = yaml.safe_load(f)
 
         # Collect samples similar to before
-        all_samples = []
+        self.samples = []
         self.all_gt_data = {}
 
         for obj_id_str in sorted(os.listdir(self.data_dir)):
@@ -50,19 +48,18 @@ class LightweightDataset(Dataset):
             self.all_gt_data[obj_id] = gt_data
 
             # Add all valid frames to a list
-            for frame_idx in gt_data.keys():
-                # We skip the file existence check here for speed
-                all_samples.append((obj_id, frame_idx))
+            for frame_idx_str in gt_data.keys():
+                frame_idx = int(frame_idx_str)
+                
+                unique_id = f"{obj_id}_{frame_idx}"
+                
+                # Deterministic Hash
+                hash_val = int(hashlib.md5(unique_id.encode()).hexdigest(), 16) % 100
+                is_train = hash_val < 80 # 80% Train, 20% Val
 
-        # Split logic
-        np.random.seed(self.seed)
-        np.random.shuffle(all_samples)
-        train_size = int(len(all_samples) * train_ratio)
-
-        if self.split == 'train':
-            self.samples = all_samples[:train_size]
-        else:
-            self.samples = all_samples[train_size:]
+                # Filter based on split
+                if (split == 'train' and is_train) or (split == 'val' and not is_train):
+                    self.samples.append((obj_id, frame_idx))
 
     def __len__(self):
         return len(self.samples)

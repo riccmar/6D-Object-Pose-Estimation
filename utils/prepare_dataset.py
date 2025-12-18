@@ -2,7 +2,7 @@ import os
 import shutil
 import yaml
 
-from dataset.dataset import LightweightDataset, CustomDataset
+from dataset.dataset import YoloDataset, CustomDataset
 
 def process_linemod_to_yolo_fast(dataset_root, yolo_dataset_root, max_samples_per_split=None):
     """
@@ -54,7 +54,7 @@ def process_linemod_to_yolo_fast(dataset_root, yolo_dataset_root, max_samples_pe
             return
     
         # Use the Lightweight dataset for faster processing
-        dataset = LightweightDataset(dataset_root, split=split_type)
+        dataset = YoloDataset(dataset_root, split=split_type)
 
         num_samples = len(dataset)
         if max_samples_per_split:
