@@ -2,7 +2,7 @@ import os
 import shutil
 import yaml
 
-from dataset.dataset import YoloDataset, CustomDataset
+from dataset.dataset import YoloDataset, CustomDataset, LINEMOD_ID_MAP
 
 def process_linemod_to_yolo_fast(dataset_root, yolo_dataset_root, max_samples_per_split=None):
     """
@@ -36,9 +36,15 @@ def process_linemod_to_yolo_fast(dataset_root, yolo_dataset_root, max_samples_pe
 
     class_names = []
     for oid in existing_obj_ids:
-        # Get name from info, or fallback to "Object X"
-        name = models_info.get(oid, {}).get('name', f"Object {oid}")
-        class_names.append(name)
+        # Get the raw name (e.g., "ape")
+        raw_name = models_info.get(oid, {}).get('name')
+        if not raw_name:
+            raw_name = LINEMOD_ID_MAP.get(oid, f"Object {oid}")
+        
+        # FORCE THE FORMAT "01 - ape"
+        formatted_name = f"{oid:02d} - {raw_name}"
+        
+        class_names.append(formatted_name)
 
     # Processing each split
     for split_type in ['train', 'test']:

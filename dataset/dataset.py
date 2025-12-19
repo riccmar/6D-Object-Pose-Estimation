@@ -9,6 +9,11 @@ from PIL import Image
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 
+LINEMOD_ID_MAP = {
+    1: 'ape', 2: 'benchvise', 3: 'bowl', 4: 'camera', 5: 'can',
+    6: 'cat', 7: 'cup', 8: 'driller', 9: 'duck', 10: 'eggbox', 
+    11: 'glue', 12: 'holepuncher', 13: 'iron', 14: 'lamp', 15: 'phone'
+}
 
 class YoloDataset(Dataset):
     """
@@ -77,9 +82,11 @@ class YoloDataset(Dataset):
         obj_gt = gt_frame_data[0]
         obj_bb = torch.tensor(obj_gt['obj_bb'], dtype=torch.int32)
 
-        # Object metadata (name, diameter, etc.) from models_info.yml
-        obj_metadata = self.models_info.get(obj_id, {})
-        obj_name = obj_metadata.get('name', f"Object {obj_id}")
+        raw_name = self.models_info.get(obj_id, {}).get('name')
+        if not raw_name:
+            raw_name = LINEMOD_ID_MAP.get(obj_id, f"Object {obj_id}")
+        # Format it
+        obj_name = f"{obj_id:02d} - {raw_name}"
 
         return {
             "rgb_path": rgb_path,      # Return image path, not image tensor
