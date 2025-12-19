@@ -54,7 +54,7 @@ def process_linemod_to_yolo_fast(dataset_root, yolo_dataset_root, max_samples_pe
             return
     
         # Use the Lightweight dataset for faster processing
-        dataset = YoloDataset(dataset_root, split=split_type)
+        dataset = YoloDataset(dataset_root, split=yolo_split)
 
         num_samples = len(dataset)
         if max_samples_per_split:

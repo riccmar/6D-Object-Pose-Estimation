@@ -58,7 +58,7 @@ class YoloDataset(Dataset):
                 is_train = hash_val < 80 # 80% Train, 20% Val
 
                 # Filter based on split
-                if (split == 'train' and is_train) or (split == 'val' and not is_train):
+                if (split == 'train' and is_train) or (split in ['val', 'test'] and not is_train):
                     self.samples.append((obj_id, frame_idx))
 
     def __len__(self):
