@@ -77,10 +77,22 @@ class YoloDataset(Dataset):
         # Just return paths, don't load images (faster)
         rgb_path = os.path.join(self.data_dir, obj_id_str, 'rgb', f"{frame_idx_str}.png")
 
-        # Get ground truth pose and bounding box for the specific object in this frame
-        gt_frame_data = self.all_gt_data[obj_id][frame_idx]
-        obj_gt = gt_frame_data[0]
-        obj_bb = torch.tensor(obj_gt['obj_bb'], dtype=torch.int32)
+        # Get the list of all objects in this frame
+        gt_list = self.all_gt_data[obj_id][frame_idx]
+
+        # Find the specific entry for the current obj_id
+        gt_frame_data = None
+        for item in gt_list:
+            if item['obj_id'] == obj_id:
+                gt_frame_data = item
+                break
+
+        # A check in case the object isn't found
+        if gt_frame_data is None:
+            # Handle error or skip
+            return self.__getitem__((idx + 1) % len(self))
+
+        obj_bb = torch.tensor(gt_frame_data['obj_bb'], dtype=torch.int32)
 
         raw_name = self.models_info.get(obj_id, {}).get('name')
         if not raw_name:

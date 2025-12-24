@@ -22,6 +22,9 @@ def yolo_finetuning(use_wandb=False, device='cpu', epochs=10, batch_size=16, exp
     Returns:
         str: Path to the directory where results are saved.
     """
+    # Enable TF32 for A100
+    torch.set_float32_matmul_precision('high') 
+    torch.backends.cudnn.benchmark = True
 
     # Prepare Dataset
     dataset_root = 'data/linemod'
@@ -78,6 +81,8 @@ def yolo_finetuning(use_wandb=False, device='cpu', epochs=10, batch_size=16, exp
         save=True,           # Save checkpoints
         device=device,
         plots=True,          # Save plots
+        workers=8,
+        amp=True
     )
 
     save_dir = str(results.save_dir)
