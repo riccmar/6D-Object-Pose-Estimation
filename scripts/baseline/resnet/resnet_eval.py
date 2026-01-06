@@ -17,11 +17,11 @@ if project_root not in sys.path:
 from dataset.dataset_baseline import RotationResNetDataset, LINEMOD_ID_MAP
 from models.models_baseline import load_rotationresnet_model
 from utils.process_dataset import load_meshes
-from utils.evaluation_metrics import calculate_degree_error, compute_add_metric, calc_stats
+from utils.evaluation_metrics import calculate_degree_error, compute_add_metric_rotation_only, calc_stats_rotation_only
 
 def resnet_evaluation(model_path, device='cpu', batch_size=32):
     # Setup
-    dataset_root = os.path.join(project_root, 'data')
+    dataset_root = os.path.join(project_root, 'data/linemod')
     
     # Handle Google Drive URL (Copied from YOLO eval)
     if model_path.startswith('http'):
@@ -92,7 +92,7 @@ def resnet_evaluation(model_path, device='cpu', batch_size=32):
                 R_gt = R_scipy.from_quat(q_gt).as_matrix()
                 R_pred = R_scipy.from_quat(q_pred).as_matrix()
                 
-                add_err = compute_add_metric(mesh_pts, R_pred, R_gt)
+                add_err = compute_add_metric_rotation_only(mesh_pts, R_pred, R_gt)
                 
                 # Accuracy (< 10% Diameter)
                 is_accurate = 1 if add_err < 0.1 * diameter else 0
@@ -113,7 +113,7 @@ def resnet_evaluation(model_path, device='cpu', batch_size=32):
         data = per_object_results[obj_id]
         
         num_samples = len(data['deg'])
-        m_deg, m_add, m_acc = calc_stats(data)
+        m_deg, m_add, m_acc = calc_stats_rotation_only(data)
 
         # Add to global
         global_stats['deg'].extend(data['deg'])
@@ -123,7 +123,7 @@ def resnet_evaluation(model_path, device='cpu', batch_size=32):
         print(f"{obj_id:>2} {name:<12} | {num_samples:<7} | {m_deg:>5.1f}° {m_add:>6.1f}mm {m_acc:>5.0f}%")
 
     print("="*80)
-    g_deg, g_add, g_acc = calc_stats(global_stats)
+    g_deg, g_add, g_acc = calc_stats_rotation_only(global_stats)
     print(f"{'AVERAGE':<15} | {len(global_stats['deg']):<7} | {g_deg:>5.1f}° {g_add:>6.1f}mm {g_acc:>5.0f}%")
     print("="*80)
 

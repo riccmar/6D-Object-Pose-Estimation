@@ -17,7 +17,7 @@ from utils.evaluation_metrics import calculate_degree_error
 
 def resnet_inference(model_path, device='cpu', sample_idx=None):
     # Setup
-    dataset_root = os.path.join(project_root, 'data')
+    dataset_root = os.path.join(project_root, 'data/linemod')
 
     # Handle Google Drive URL
     if model_path.startswith('http'):

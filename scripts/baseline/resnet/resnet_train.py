@@ -37,7 +37,7 @@ def resnet_training(device='cpu', epochs=50, batch_size=64, lr=0.0001):
     torch.backends.cudnn.benchmark = True
 
     # Dataset Root (Assumed to be at project root 'data')
-    dataset_root = os.path.join(project_root, 'data')
+    dataset_root = os.path.join(project_root, 'data/linemod')
     
     if not os.path.exists(os.path.join(dataset_root, 'linemod/Linemod_preprocessed')):
         print(f"Error: Linemod_preprocessed not found in {dataset_root}.")

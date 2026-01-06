@@ -166,8 +166,14 @@ def load_meshes(dataset_root):
                 # Calculate Diameter (approximate via bbox diagonal)
                 extents = vertices.max(axis=0) - vertices.min(axis=0)
                 diameter = np.linalg.norm(extents)
+                # Use the maximum dimension, which is a more robust proxy for the "size" the camera sees.
+                real_height = np.max(extents)
 
-                meshes[obj_id] = {'vertices': vertices, 'diameter': diameter}
+                meshes[obj_id] = {
+                    'vertices': vertices, 
+                    'diameter': diameter,
+                    'height': real_height
+                }
             except Exception as e:
                 print(f"Warning: Failed to load mesh {filename}: {e}")
 

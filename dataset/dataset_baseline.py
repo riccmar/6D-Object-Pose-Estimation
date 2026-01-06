@@ -113,7 +113,7 @@ class RotationResNetDataset(Dataset):
         self.transform = transform
 
         # Paths
-        self.data_dir = os.path.join(dataset_root, 'linemod', 'Linemod_preprocessed', 'data')
+        self.data_dir = os.path.join(dataset_root, 'Linemod_preprocessed', 'data')
 
         self.samples = []
         self.all_gt_data = {}
@@ -231,3 +231,93 @@ class RotationResNetDataset(Dataset):
         label_quat = torch.tensor(rot_quat, dtype=torch.float32)
 
         return crop, label_quat, obj_id
+
+class BaselineDataset(Dataset):
+    def __init__(self, dataset_root, split='val'):
+        self.dataset_root = dataset_root
+        self.split = split
+
+        self.data_dir = os.path.join(dataset_root, 'Linemod_preprocessed', 'data')
+
+        self.samples = []
+        self.all_gt_data = {}
+        self.all_cam_K = {} # Cache camera matrices
+
+        print(f"Initializing {split} dataset...")
+
+        # Iterate over object folders
+        for obj_id_str in sorted(os.listdir(self.data_dir)):
+            if not obj_id_str.isdigit():
+              continue
+
+            obj_id = int(obj_id_str)
+
+            # Paths
+            gt_path = os.path.join(self.data_dir, obj_id_str, 'gt.yml')
+            info_path = os.path.join(self.data_dir, obj_id_str, 'info.yml') # info.yml contains info of the camera
+
+            if not os.path.exists(gt_path) or not os.path.exists(info_path):
+              continue
+
+            # Load Data
+            with open(gt_path, 'r') as f:
+              self.all_gt_data[obj_id] = yaml.safe_load(f)
+            with open(info_path, 'r') as f:
+                info_data = yaml.safe_load(f)
+                # Cache K matrix (Assuming it is constant for the object sequence)
+                self.all_cam_K[obj_id] = np.array(info_data[0]['cam_K']).reshape(3, 3)
+
+            # Hash Split Logic
+            for frame_idx_str in self.all_gt_data[obj_id].keys():
+                frame_idx = int(frame_idx_str)
+                unique_id = f"{obj_id}_{frame_idx}"
+                hash_val = int(hashlib.md5(unique_id.encode()).hexdigest(), 16) % 100
+                is_train = hash_val < 80 # 80% train
+
+                if (split == 'train' and is_train) or (split == 'val' and not is_train):
+                    self.samples.append((obj_id, frame_idx))
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __getitem__(self, idx):
+        obj_id, frame_idx = self.samples[idx]
+        obj_id_str = f"{obj_id:02d}"
+        frame_idx_str = f"{frame_idx:04d}"
+
+        # Load Image
+        rgb_path = os.path.join(self.data_dir, obj_id_str, 'rgb', f"{frame_idx_str}.png")
+        image = cv2.imread(rgb_path)
+        if image is None:
+          return self.__getitem__((idx + 1) % len(self)) # Skip corrupt
+        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+        # Get the list of all objects in this frame
+        gt_list = self.all_gt_data[obj_id][frame_idx]
+
+        # Find the specific entry for the current obj_id
+        gt_frame_data = None
+        for item in gt_list:
+            if item['obj_id'] == obj_id:
+                gt_frame_data = item
+                break
+
+        # Safety check if object not found (should not happen)
+        if gt_frame_data is None:
+            return self.__getitem__((idx + 1) % len(self))
+
+        # Get Pose Data
+        cam_K = self.all_cam_K[obj_id]
+        gt_R = np.array(gt_frame_data['cam_R_m2c']).reshape(3, 3)
+        gt_t = np.array(gt_frame_data['cam_t_m2c']) # [tx, ty, tz]
+
+        # We need to return obj_id to look up the mesh later
+        sample = {
+            'image': image_rgb,
+            'obj_id': obj_id,
+            'cam_K': cam_K.astype(np.float32),
+            'gt_R': gt_R.astype(np.float32),
+            'gt_t': gt_t.astype(np.float32),
+        }
+
+        return sample
