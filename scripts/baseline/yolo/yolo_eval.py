@@ -10,7 +10,7 @@ project_root = os.path.abspath(os.path.join(current_dir, '../../..'))
 if project_root not in sys.path:
     sys.path.append(project_root)
 
-from utils.prepare_dataset import process_linemod_for_yolo
+from utils.process_dataset import process_linemod_for_yolo
 
 def yolo_evaluation(model_path, device='cpu', batch_size=16):
     """
@@ -84,7 +84,7 @@ def yolo_evaluation(model_path, device='cpu', batch_size=16):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_path', type=str, required=True, help='Path to the trained model weights (.pt file)')
+    parser.add_argument('--model_path', type=str, required=True, help='Path to the trained model weights')
     parser.add_argument('--batch_size', type=int, default=16, help='Batch size for evaluation')
     
     args = parser.parse_args()

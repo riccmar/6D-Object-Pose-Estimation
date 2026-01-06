@@ -10,7 +10,7 @@ project_root = os.path.abspath(os.path.join(current_dir, '../../..'))
 if project_root not in sys.path:
     sys.path.append(project_root)
 
-from utils.prepare_dataset import process_linemod_for_yolo
+from utils.process_dataset import process_linemod_for_yolo
 
 def yolo_finetuning(device='cpu', epochs=10, batch_size=16):
     """

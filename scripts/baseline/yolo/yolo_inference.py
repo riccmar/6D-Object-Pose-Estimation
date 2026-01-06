@@ -14,7 +14,7 @@ project_root = os.path.abspath(os.path.join(current_dir, '../../..'))
 if project_root not in sys.path:
     sys.path.append(project_root)
 
-from utils.prepare_dataset import process_linemod_for_yolo
+from utils.process_dataset import process_linemod_for_yolo
 
 def yolo_inference(model_path, device='cpu', conf=0.5, num_samples=3):
     """
@@ -105,7 +105,7 @@ def yolo_inference(model_path, device='cpu', conf=0.5, num_samples=3):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_path', type=str, default=None, help='Path to local model or destination for download')
+    parser.add_argument('--model_path', type=str, default=None, help='Path to the trained model weights')
     parser.add_argument('--samples', type=int, default=3, help='Number of random samples to test')
     parser.add_argument('--conf', type=float, default=0.5, help='Confidence threshold for predictions')
     

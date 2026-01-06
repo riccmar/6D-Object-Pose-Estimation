@@ -1,6 +1,9 @@
 import os
 import shutil
 import yaml
+import trimesh
+import numpy as np
+import sys
 
 from dataset.dataset_baseline import YoloDataset, LINEMOD_ID_MAP
 
@@ -132,6 +135,40 @@ def create_yaml(root, class_names):
         f.write("names:\n")
         for i, name in enumerate(class_names):
             f.write(f"  {i}: {name}\n")
-    
+
     print(f"Dataset generation complete. Config saved to {yaml_path}.")
     return yaml_path
+
+def load_meshes(dataset_root):
+    """
+    Loads 3D meshes for all objects in the dataset.
+    Returns a dict: {obj_id: {'vertices': np.array, 'diameter': float}}
+    """
+    models_dir = os.path.join(dataset_root, 'Linemod_preprocessed', 'models')
+    if not os.path.exists(models_dir):
+        print(f"Error: Models directory not found at {models_dir}")
+        sys.exit(1)
+        
+    meshes = {}
+    print("Pre-loading 3D models for ADD metric...")
+
+    # Iterate over model files (obj_01.ply, obj_02.ply, etc.)
+    for filename in sorted(os.listdir(models_dir)):
+        if filename.endswith(".ply") and filename.startswith("obj_"):
+            try:
+                obj_id = int(filename.split('_')[1].split('.')[0])
+                ply_path = os.path.join(models_dir, filename)
+
+                # Load Mesh
+                mesh = trimesh.load(ply_path)
+                vertices = np.array(mesh.vertices)
+
+                # Calculate Diameter (approximate via bbox diagonal)
+                extents = vertices.max(axis=0) - vertices.min(axis=0)
+                diameter = np.linalg.norm(extents)
+
+                meshes[obj_id] = {'vertices': vertices, 'diameter': diameter}
+            except Exception as e:
+                print(f"Warning: Failed to load mesh {filename}: {e}")
+
+    return meshes
