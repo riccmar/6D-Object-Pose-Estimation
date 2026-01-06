@@ -144,7 +144,7 @@ def load_meshes(dataset_root):
     Loads 3D meshes for all objects in the dataset.
     Returns a dict: {obj_id: {'vertices': np.array, 'diameter': float}}
     """
-    models_dir = os.path.join(dataset_root, 'linemod', 'Linemod_preprocessed', 'models')
+    models_dir = os.path.join(dataset_root, 'Linemod_preprocessed', 'models')
     if not os.path.exists(models_dir):
         print(f"Error: Models directory not found at {models_dir}")
         sys.exit(1)

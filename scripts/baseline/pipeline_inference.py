@@ -4,7 +4,6 @@ import cv2
 import argparse
 import gdown
 import numpy as np
-import matplotlib.pyplot as plt
 import torch
 from torch.utils.data import DataLoader
 
@@ -88,18 +87,19 @@ def pipeline_inference(loader, pipeline, meshes, symmetric_ids, num_samples=3, c
 
         cv2.putText(combined_img, text, (20, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.8, text_color, 2)
 
-        # Display
-        plt.figure(figsize=(12, 6))
-        plt.imshow(cv2.cvtColor(combined_img, cv2.COLOR_BGR2RGB))
-        plt.axis('off')
-        plt.show()
+        # Save to disk
+        output_dir = os.path.join(project_root, 'inference_results')
+        os.makedirs(output_dir, exist_ok=True)
+        save_path = os.path.join(output_dir, f"inference_{idx}_{obj_id}.png")
+        cv2.imwrite(save_path, combined_img)
+        print(f"Saved result to: {save_path}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Visualize predictions from Baseline Pose Estimation System")
     parser.add_argument('--yolo_path', type=str, required=True, help='Path to YOLO weights')
     parser.add_argument('--resnet_path', type=str, required=True, help='Path to ResNet weights')
     parser.add_argument('--num_samples', type=int, default=3, help='Number of random samples to visualize')
-    parser.add_argument('--conf_threshold', type=float, default=0.25, help='Confidence threshold for YOLO detection')
+    parser.add_argument('--yolo_conf', type=float, default=0.25, help='Confidence threshold for YOLO detection')
     
     args = parser.parse_args()
 
@@ -142,4 +142,4 @@ if __name__ == "__main__":
     meshes = load_meshes(dataset_root)
 
     print(f"Inferencing and visualizing {args.num_samples} random samples...")
-    pipeline_inference(val_loader, pipeline, meshes, SYMMETRIC_IDS, num_samples=args.num_samples, conf=args.conf_threshold)
+    pipeline_inference(val_loader, pipeline, meshes, SYMMETRIC_IDS, num_samples=args.num_samples, conf=args.yolo_conf)
