@@ -1,6 +1,6 @@
 import os
 import subprocess
-import sys
+import argparse
 
 def setup_linemod_from_drive(drive_zip_path, output_dir="data"):
     """
@@ -63,12 +63,6 @@ def setup_linemod_from_drive(drive_zip_path, output_dir="data"):
             print("Error: 7zip extraction failed.")
     else:
         print("Error: Local zip file not found after copy.")
-
-
-if __name__ == "__main__": 
-    import argparse
-
-# ... (keep your setup_linemod_from_drive function above) ...
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Copy and extract dataset from Google Drive to Colab.")
