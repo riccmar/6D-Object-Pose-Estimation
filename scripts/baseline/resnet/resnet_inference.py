@@ -77,7 +77,7 @@ def resnet_inference(model_path, device='cpu', sample_idx=None):
     gt_q_norm = gt_q / np.linalg.norm(gt_q)
 
     # Visualization / Printing
-    print("-" * 60)
+    print("\n" + "-" * 60)
     print(f"INFERENCE RESULTS (Sample ID: {idx} | Object ID: {obj_id})")
     print("-" * 60)
     print(f"{'TYPE':<20} | {'QUATERNION [x, y, z, w]':<40}")
