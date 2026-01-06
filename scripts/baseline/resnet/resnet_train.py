@@ -39,7 +39,7 @@ def resnet_training(device='cpu', epochs=50, batch_size=64, lr=0.0001):
     # Dataset Root (Assumed to be at project root 'data')
     dataset_root = os.path.join(project_root, 'data')
     
-    if not os.path.exists(os.path.join(dataset_root, 'Linemod_preprocessed')):
+    if not os.path.exists(os.path.join(dataset_root, 'linemod/Linemod_preprocessed')):
         print(f"Error: Linemod_preprocessed not found in {dataset_root}.")
         print("Please ensure the dataset is downloaded")
         sys.exit(1)
@@ -82,7 +82,7 @@ def resnet_training(device='cpu', epochs=50, batch_size=64, lr=0.0001):
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3)
 
     # Loss
-    USE_QUAT_LOSS = True  # Set False to use MSE
+    USE_QUAT_LOSS = False  # Set False to use MSE
     if USE_QUAT_LOSS:
         loss_fn = QuaternionLoss()
         loss_name = "QUAT_LRSCHED"

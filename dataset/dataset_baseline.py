@@ -113,7 +113,7 @@ class RotationResNetDataset(Dataset):
         self.transform = transform
 
         # Paths
-        self.data_dir = os.path.join(dataset_root, 'Linemod_preprocessed', 'data')
+        self.data_dir = os.path.join(dataset_root, 'linemod', 'Linemod_preprocessed', 'data')
 
         self.samples = []
         self.all_gt_data = {}
