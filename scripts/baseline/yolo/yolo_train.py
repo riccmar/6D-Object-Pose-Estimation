@@ -1,8 +1,14 @@
 import os
+import sys
 import torch
 import argparse
 from datetime import datetime
 from ultralytics import YOLO
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.abspath(os.path.join(current_dir, '../../..'))
+if project_root not in sys.path:
+    sys.path.append(project_root)
 
 from utils.prepare_dataset import process_linemod_for_yolo
 
@@ -72,7 +78,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--epochs', type=int, default=10, help='Number of training epochs')
     parser.add_argument('--batch_size', type=int, default=16, help='Batch size for training')
-    parser.add_argument('--export_path', type=str, default=None, help='Path to export the trained model (e.g. shared drive)')
     
     args = parser.parse_args()
     
@@ -86,9 +91,6 @@ if __name__ == "__main__":
         else:
             device = 0
             print(f"Using single GPU: {device}")
-    elif torch.backends.mps.is_available():
-        device = 'mps'
-        print(f"Using MPS device: {device}")
     else:
         device = 'cpu'
         print(f"Using device: {device}")

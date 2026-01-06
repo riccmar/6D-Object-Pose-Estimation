@@ -1,13 +1,20 @@
 import os
+import sys
 import random
 import math
 import argparse
 import cv2
 import torch
+import gdown
 import matplotlib.pyplot as plt
 from ultralytics import YOLO
 
-from utils.prepare_dataset import process_linemod_to_yolo_fast
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.abspath(os.path.join(current_dir, '../../..'))
+if project_root not in sys.path:
+    sys.path.append(project_root)
+
+from utils.prepare_dataset import process_linemod_for_yolo
 
 def yolo_inference(model_path, device='cpu', conf=0.5, num_samples=3):
     """
@@ -19,6 +26,19 @@ def yolo_inference(model_path, device='cpu', conf=0.5, num_samples=3):
         conf (float): Confidence threshold for predictions.
         num_samples (int): Number of random samples to test.
     """
+
+    # Handle Google Drive URL
+    if model_path.startswith('http'):
+        print(f"Model path detected as URL. Downloading from Google Drive...")
+        
+        checkpoints_dir = os.path.join(project_root, 'checkpoints')
+        os.makedirs(checkpoints_dir, exist_ok=True)
+
+        download_path = os.path.join(checkpoints_dir, 'yolo_baseline.pt')
+        gdown.download(model_path, download_path, quiet=False, fuzzy=True)
+        model_path = download_path
+        print(f"Model downloaded to: {model_path}")
+        
     
     # Define dataset root (assuming standard structure)
     yolo_dataset_root = 'data/yolo_dataset'
@@ -32,7 +52,7 @@ def yolo_inference(model_path, device='cpu', conf=0.5, num_samples=3):
         if os.path.exists(linemod_prepocessed_dataset_root):
             dataset_root = 'data/linemod'
             yolo_dataset_root = 'data/yolo_dataset'
-            process_linemod_to_yolo_fast(dataset_root, yolo_dataset_root)
+            process_linemod_for_yolo(dataset_root, yolo_dataset_root)
         else:
             print("Please first download and preprocess the Linemod dataset.")
             exit(1)
@@ -106,9 +126,6 @@ if __name__ == "__main__":
         else:
             device = 0
             print(f"Using single GPU: {device}")
-    elif torch.backends.mps.is_available():
-        device = 'mps'
-        print(f"Using MPS device: {device}")
     else:
         device = 'cpu'
         print(f"Using device: {device}")

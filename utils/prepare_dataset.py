@@ -2,7 +2,7 @@ import os
 import shutil
 import yaml
 
-from dataset.dataset import YoloDataset, CustomDataset, LINEMOD_ID_MAP
+from dataset.dataset import YoloDataset, LINEMOD_ID_MAP
 
 def process_linemod_for_yolo(dataset_root, yolo_dataset_root, max_samples_per_split=None):
     """
