@@ -32,7 +32,7 @@ def print_report(global_metrics, per_object_metrics, detection_failures, total_f
     print("GLOBAL RESULTS (All Objects Averaged)")
     print("="*100)
     print(f"Total Samples Processed: {total_frames}")
-    print(f"{'Metric Component':<30} | {'Accuracy':<10} | {'Mean Err':<11} | {'Median Err':<12}")
+    print(f"{'Metric Component':<30} | {'ADD-0.1d':<10} | {'Mean ADD':<11} | {'Median ADD':<12}")
     print("-" * 100)
     print(f"{'1. Rotation Only (ResNet)':<30} | {g_acc_rot:>6.2f}%    | {g_err_rot:>8.2f} mm | {g_med_rot:>8.2f} mm")
     print(f"{'2. Translation Only (Pinhole)':<30} | {g_acc_trans:>6.2f}%    | {g_err_trans:>8.2f} mm | {g_med_trans:>8.2f} mm")
@@ -42,12 +42,12 @@ def print_report(global_metrics, per_object_metrics, detection_failures, total_f
     print("="*100)
 
     # Per Object Stats
-    print("\n" + "="*150)
+    print("\n" + "="*105)
     print(f"PER-OBJECT BREAKDOWN")
-    print("="*150)
+    print("="*105)
     print(f"{'ID':<4} {'Name':<12} | {'Count':<6} | {'Rot Only (ResNet)':<20} | {'Trans Only (Pinhole)':<20} | {'Baseline (Full)':<20} | {'Fail'}")
-    print(f"{'':<4} {'':<12} | {'':<6} | {'Acc %':<9} {'Mean(mm)':<10} | {'Acc %':<9} {'Mean(mm)':<10} | {'Acc %':<9} {'Mean(mm)':<10} |")
-    print("-" * 150)
+    print(f"{'':<4} {'':<12} | {'':<6} | {'ADD-0.1d':<9} {'Mean(mm)':<10} | {'ADD-0.1d':<9} {'Mean(mm)':<10} | {'ADD-0.1d':<9} {'Mean(mm)':<10} |")
+    print("-" * 105)
 
     for obj_id in sorted(per_object_metrics.keys()):
         data = per_object_metrics[obj_id]
@@ -70,7 +70,7 @@ def print_report(global_metrics, per_object_metrics, detection_failures, total_f
                 f"{acc_trans:>6.1f}%  {err_trans:>8.1f}mm  | "
                 f"{acc_full:>6.1f}%  {err_full:>8.1f}mm  | "
                 f"{fail_p:.0f}%")
-    print("="*150)
+    print("="*105)
     print("(* indicates ADD-S metric was used)")
 
 def pipeline_evaluation(pipeline, val_loader, meshes, conf_threshold=0.5, symmetric_ids=SYMMETRIC_IDS):
