@@ -4,8 +4,130 @@ import yaml
 import trimesh
 import numpy as np
 import sys
+import cv2
 
 from dataset.dataset_baseline import YoloDataset, LINEMOD_ID_MAP
+from dataset.dataset_extension import YoloSegDataset
+
+def process_linemod_for_yolo_seg(dataset_root, yolo_dataset_root, max_samples_per_split=None):
+    """
+    Converts the LineMOD preprocessed dataset to YOLO Segmentation format.
+
+    Args:
+        dataset_root (str): Path to the root of the LineMOD preprocessed dataset.
+        yolo_dataset_root (str): Path where the YOLO formatted dataset will be saved.
+        max_samples_per_split (int, optional): Maximum number of samples to process per split (train/test).
+                                               If None, processes all samples.
+    
+    Returns:
+        str: Path to the generated YOLO dataset YAML configuration file.
+    """
+
+    # Cleanup and create YOLO dataset directory
+    if os.path.exists(yolo_dataset_root):
+        print(f"Removing existing YOLO dataset directory: {yolo_dataset_root}")
+        shutil.rmtree(yolo_dataset_root)
+    os.makedirs(yolo_dataset_root, exist_ok=True)
+
+    # Mapping from object IDs to class IDs
+    data_dir = os.path.join(dataset_root, 'Linemod_preprocessed', 'data')
+    existing_obj_ids = sorted([int(x) for x in os.listdir(data_dir) if x.isdigit()])
+    obj_id_to_class_id = {oid: i for i, oid in enumerate(existing_obj_ids)}
+    print(f"Class Mapping found: {obj_id_to_class_id}")
+
+    models_info_path = os.path.join(dataset_root, 'Linemod_preprocessed', 'models', 'models_info.yml')
+    with open(models_info_path, 'r') as f:
+        models_info = yaml.safe_load(f)
+
+    class_names = []
+    for oid in existing_obj_ids:
+        # Get the raw name (e.g., "ape")
+        raw_name = models_info.get(oid, {}).get('name')
+        if not raw_name:
+            raw_name = LINEMOD_ID_MAP.get(oid, f"Object {oid}")
+        
+        # FORCE THE FORMAT "01 - ape"
+        formatted_name = f"{oid:02d} - {raw_name}"
+        
+        class_names.append(formatted_name)
+
+    # Processing each split
+    for split_type in ['train', 'test']:
+        yolo_split = 'train' if split_type == 'train' else 'val'
+
+        images_dir = os.path.join(yolo_dataset_root, 'images', yolo_split)
+        labels_dir = os.path.join(yolo_dataset_root, 'labels', yolo_split)
+        os.makedirs(images_dir, exist_ok=True)
+        os.makedirs(labels_dir, exist_ok=True)
+
+        if not os.path.exists(dataset_root):
+            print(f"Error: Dataset root path does not exist: {dataset_root}.")
+            return
+    
+        # Use the explicit Seg dataset
+        dataset = YoloSegDataset(dataset_root, split=yolo_split)
+
+        num_samples = len(dataset)
+        if max_samples_per_split:
+            num_samples = min(len(dataset), max_samples_per_split)
+
+        print(f"Processing {num_samples} samples for {yolo_split} (Segmentation)...")
+
+        for i in range(num_samples):
+            sample = dataset[i]
+
+            # Unpack data directly
+            src_path = sample['rgb_path']
+            mask_path = sample['mask_path']
+            obj_id = sample['obj_id']
+            frame_idx = sample['frame_idx']
+            
+            # Use a unique, common base name for both image and label
+            base_filename = f"obj_{obj_id:02d}_{frame_idx:04d}"
+            
+            yolo_class_id = obj_id_to_class_id[obj_id]
+
+            # Process Mask
+            mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+            if mask is None:
+                continue
+                
+            h, w = mask.shape
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            valid_label = False
+            label_lines = []
+
+            for cnt in contours:
+                if cv2.contourArea(cnt) < 50: 
+                    continue
+
+                cnt = cnt.flatten()
+                normalized = []
+                for k in range(0, len(cnt), 2):
+                    normalized.append(cnt[k] / w)
+                    normalized.append(cnt[k+1] / h)
+
+                if len(normalized) >= 6:
+                    poly_str = " ".join([f"{x:.6f}" for x in normalized])
+                    label_lines.append(f"{yolo_class_id} {poly_str}")
+                    valid_label = True
+
+            if valid_label:
+                # Write Label File
+                label_path = os.path.join(labels_dir, f"{base_filename}.txt")
+                with open(label_path, 'w') as f:
+                    for line in label_lines:
+                        f.write(line + "\n")
+                
+                # Copy Image
+                shutil.copy(src_path, os.path.join(images_dir, f"{base_filename}.png"))
+
+            if (i+1) % 1000 == 0:
+                print(f"  Converted {i+1} files...")
+
+    return create_yaml(yolo_dataset_root, class_names)
+
 
 def process_linemod_for_yolo(dataset_root, yolo_dataset_root, max_samples_per_split=None):
     """
