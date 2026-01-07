@@ -17,7 +17,7 @@ from dataset.dataset_extension import RgbdFusionNetDataset
 from models.models_extension import RGBD_Fusion_Net
 from dataset.dataset_baseline import LINEMOD_ID_MAP
 from utils.process_dataset import load_meshes
-from utils.evaluation_metrics import compute_add_metric, compute_adds_metric, calc_stats
+from utils.evaluation_metrics import compute_add_metric, compute_adds_metric
 
 def rgbd_fusion_net_evaluation(model_path, device='cpu', batch_size=32):
     # Setup
@@ -142,7 +142,7 @@ def rgbd_fusion_net_evaluation(model_path, device='cpu', batch_size=32):
         # Add to global
         global_results.extend(res_list)
 
-        # Print (Mean Err converted to mm for readability: * 1000)
+        # Mean Err converted to mm for readability: * 1000
         print(f"{obj_id:>2} {name:<12} | {len(res_list):<8} | {acc_01d:>9.2f}% | {acc_2cm:>9.2f}% | {mean_err*1000:>8.2f}mm")
 
     print("="*len(header))
