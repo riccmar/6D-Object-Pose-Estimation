@@ -36,8 +36,13 @@ class YoloSegDataset(Dataset):
             with open(gt_path, 'r') as f:
                 gt_data = yaml.safe_load(f)
 
-            for frame_idx_str in gt_data.keys():
+            for frame_idx_str, anns in gt_data.items():
                 frame_idx = int(frame_idx_str)
+
+                # Filter frames with no annotations
+                if not anns:
+                    continue
+
                 unique_id = f"{obj_id}_{frame_idx}"
                 
                 # Deterministic Hash for Split (Same as baseline for consistency)

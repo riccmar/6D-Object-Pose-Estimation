@@ -16,7 +16,7 @@ if project_root not in sys.path:
 
 from utils.process_dataset import process_linemod_for_yolo_seg
 
-def yolo_segmentation_inference(model_path, device='cpu', conf=0.5, num_samples=3):
+def yolo_segmentation_inference(model_path, device='cpu', conf=0.25, num_samples=3):
     """
     Runs inference (segmentation + bbox) on random validation images.
     
@@ -88,7 +88,7 @@ def yolo_segmentation_inference(model_path, device='cpu', conf=0.5, num_samples=
     
     for i, result in enumerate(results):
         # Plot the image with bounding boxes and masks
-        res_plotted = result.plot(prob=True, boxes=True, masks=True)
+        res_plotted = result.plot()
 
         # Convert BGR (OpenCV) to RGB (Matplotlib)
         res_rgb = cv2.cvtColor(res_plotted, cv2.COLOR_BGR2RGB)
@@ -99,7 +99,6 @@ def yolo_segmentation_inference(model_path, device='cpu', conf=0.5, num_samples=
         plt.title(f"Prediction Sample {i+1}")
 
     plt.tight_layout()
-    plt.show()
 
     output_filename = 'inference_results.png'
     plt.savefig(output_filename)
@@ -109,7 +108,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_path', type=str, required=True, help='Path to the trained model weights')
     parser.add_argument('--samples', type=int, default=3, help='Number of random samples to test')
-    parser.add_argument('--conf', type=float, default=0.5, help='Confidence threshold')
+    parser.add_argument('--conf', type=float, default=0.25, help='Confidence threshold')
     
     args = parser.parse_args()
     
