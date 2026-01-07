@@ -37,14 +37,14 @@ class YoloDataset(Dataset):
 
         for obj_id_str in sorted(os.listdir(self.data_dir)):
             if not obj_id_str.isdigit():
-              continue  # Skip non-numeric folders
+                continue  # Skip non-numeric folders
 
             obj_id = int(obj_id_str)
             gt_path = os.path.join(self.data_dir, obj_id_str, 'gt.yml')
 
             if not os.path.exists(gt_path):
-              print(f"Warning: gt.yml or info.yml not found for object {obj_id_str}. Skipping.")
-              continue
+                print(f"Warning: gt.yml not found for object {obj_id_str}. Skipping.")
+                continue
 
             with open(gt_path, 'r') as f:
                 gt_data = yaml.safe_load(f)

@@ -23,7 +23,7 @@ def resnet_evaluation(model_path, device='cpu', batch_size=32):
     # Setup
     dataset_root = os.path.join(project_root, 'data/linemod')
     
-    # Handle Google Drive URL (Copied from YOLO eval)
+    # Handle Google Drive URL
     if model_path.startswith('http'):
         print(f"Model path detected as URL. Downloading from Google Drive...")
         
