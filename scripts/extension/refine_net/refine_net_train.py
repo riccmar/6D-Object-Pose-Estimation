@@ -36,7 +36,7 @@ def refine_net_training(coarse_model_path, device='cuda', epochs=10, batch_size=
     if coarse_model_path.startswith('http'):
         print(f"Model path detected as URL. Downloading from Google Drive...")
 
-        download_path = os.path.join(CHECKPOINT_DIR, 'refine_net_downloaded.pth')
+        download_path = os.path.join(CHECKPOINT_DIR, 'coarse_model_downloaded.pth')
         gdown.download(coarse_model_path, download_path, quiet=False, fuzzy=True)
         coarse_model_path = download_path
         print(f"Model downloaded to: {coarse_model_path}")

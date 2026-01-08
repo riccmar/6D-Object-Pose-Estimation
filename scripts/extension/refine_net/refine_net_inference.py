@@ -34,7 +34,7 @@ def refine_net_inference(coarse_model_path, refine_model_path, device='cpu', num
         if path.startswith('http'):
             print(f"{name} model path detected as URL. Downloading...")
             
-            filename = 'coarse_model.pth' if name == "Coarse" else 'refine_model.pth'
+            filename = 'coarse_model_downloaded.pth' if name == "Coarse" else 'refine_model_downloaded.pth'
             download_path = os.path.join(checkpoints_dir, filename)
             gdown.download(path, download_path, quiet=False, fuzzy=True)
             if name == "Coarse": 
@@ -86,10 +86,13 @@ def refine_net_inference(coarse_model_path, refine_model_path, device='cpu', num
     output_dir = os.path.join(project_root, 'inference_results')
     os.makedirs(output_dir, exist_ok=True)
 
+    print(f"\n{'Sample':<8} | {'Obj ID':<8} | {'Trans. Err (mm)':<16} | {'Rot. Err (deg)':<16} | {'Saved File'}")
+    print("-" * 85)
+
     for i in range(num_samples):
         # Pick Random Sample
         idx = random.randint(0, len(val_set) - 1)
-        print(f"\nProcessing Sample {i+1}/{num_samples} (Index: {idx})")
+        # print(f"\nProcessing Sample {i+1}/{num_samples} (Index: {idx})")
 
         # Get Raw Info
         raw_sample = val_set.samples[idx]
@@ -196,15 +199,12 @@ def refine_net_inference(coarse_model_path, refine_model_path, device='cpu', num
         plt.tight_layout()
         
         # Save result
-        save_path = os.path.join(output_dir, f"refine_infer_{idx}.png")
+        save_path = os.path.join(output_dir, f"refine_infer_{i}.png")
         plt.savefig(save_path)
         plt.close(fig)
 
         # Written Output
-        print(f"METRICS REPORT | Object ID: {obj_id}")
-        print(f"Translation Error: {t_err*100:.2f} cm")
-        print(f"Rotation Error:    {angle_err_deg:.2f}°")
-        print(f"Saved visualization to: {save_path}")
+        print(f"{i+1:<8} | {obj_id:<8} | {t_err*1000:<16.2f} | {angle_err_deg:<16.2f} | {os.path.basename(save_path)}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Inference for RefineNet")
