@@ -125,7 +125,7 @@ def rgbd_fusion_net_evaluation(model_path, device='cpu', batch_size=32):
                 results[obj_id].append((is_correct_01d, is_correct_2cm, err))
 
     # Reporting
-    header = f"{'OBJECT':<15} | {'SAMPLES':<8} | {'< 0.1d':<10} | {'< 2cm':<10} | {'Mean ADD error':<15}"
+    header = f"{'OBJECT':<15} | {'SAMPLES':<8} | {'Acc (<2cm)':<12} | {'Acc (<0.1d)':<12} | {'Mean ADD error':<15}"
     print("\n" + "="*len(header))
     print(header)
     print("-" * len(header))
@@ -146,7 +146,7 @@ def rgbd_fusion_net_evaluation(model_path, device='cpu', batch_size=32):
         global_results.extend(res_list)
 
         # Mean Err converted to mm for readability: * 1000
-        print(f"{obj_id:>2} {name:<12} | {len(res_list):<8} | {acc_01d:>9.2f}% | {acc_2cm:>9.2f}% | {mean_err*1000:>13.2f}mm")
+        print(f"{obj_id:>2} {name:<12} | {len(res_list):<8} | {acc_2cm:>11.2f}% | {acc_01d:>11.2f}% | {mean_err*1000:>13.2f}mm")
 
     print("="*len(header))
     
@@ -156,7 +156,7 @@ def rgbd_fusion_net_evaluation(model_path, device='cpu', batch_size=32):
         g_acc_2cm = np.mean(g_s_2cm) * 100
         g_mean_err = np.mean(g_errs)
         
-        print(f"{'AVERAGE':<15} | {len(global_results):<8} | {g_acc_01d:>9.2f}% | {g_acc_2cm:>9.2f}% | {g_mean_err*1000:>13.2f}mm")
+        print(f"{'AVERAGE':<15} | {len(global_results):<8} | {g_acc_2cm:>11.2f}% | {g_acc_01d:>11.2f}% | {g_mean_err*1000:>13.2f}mm")
     print("="*len(header))
 
 if __name__ == "__main__":

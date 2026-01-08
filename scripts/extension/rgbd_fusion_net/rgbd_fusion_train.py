@@ -63,7 +63,7 @@ def rgbd_fusion_net_training(device='cuda', epochs=50, batch_size=32, lr=0.0001)
     print(recap)
 
 
-    CHECKPOINT_DIR = os.path.join(project_root, 'checkpoints', 'rgbd_fusion')
+    CHECKPOINT_DIR = os.path.join(project_root, 'checkpoints', 'rgbd_fusion_net')
     MODEL_SAVE_DIR = os.path.join(CHECKPOINT_DIR, 'best')
     os.makedirs(CHECKPOINT_DIR, exist_ok=True)
     os.makedirs(MODEL_SAVE_DIR, exist_ok=True) 

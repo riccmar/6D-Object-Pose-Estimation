@@ -286,7 +286,7 @@ def load_meshes(dataset_root):
                 vertices = np.array(mesh.vertices)
 
                 # Calculate Diameter (approximate via bbox diagonal)
-                extents = vertices.max(axis=0) - vertices.min(axis=0)
+                extents = mesh.bounding_box.extents
                 diameter = np.linalg.norm(extents)
                 # Use the maximum dimension, which is a more robust proxy for the "size" the camera sees.
                 real_height = np.max(extents)
