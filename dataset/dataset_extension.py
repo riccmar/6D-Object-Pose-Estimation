@@ -140,17 +140,22 @@ class RgbdFusionNetDataset(Dataset):
                         if np.linalg.norm(t_raw) > 1.0: 
                             t_raw = t_raw / 1000.0
 
-                        self.samples.append({
-                            "obj_id": obj_id,
-                            "rgb_path": os.path.join(base_dir, "rgb", f"{frame_idx:04d}.png"),
-                            "depth_path": os.path.join(base_dir, "depth", f"{frame_idx:04d}.png"),
-                            "mask_path": os.path.join(base_dir, "mask", f"{frame_idx:04d}.png"),
-                            "cam_K": np.array(info_data[frame_idx]['cam_K']).reshape(3, 3),
-                            "cam_R": np.array(ann['cam_R_m2c']).reshape(3, 3),
-                            "cam_t": t_raw,
-                            "bbox": ann['obj_bb'],
-                            "depth_scale": info_data[frame_idx].get('depth_scale', 1.0)
-                        })
+                        rgb_path = os.path.join(base_dir, "rgb", f"{frame_idx:04d}.png")
+                        depth_path = os.path.join(base_dir, "depth", f"{frame_idx:04d}.png")
+                        mask_path = os.path.join(base_dir, "mask", f"{frame_idx:04d}.png")
+
+                        if os.path.exists(rgb_path) and os.path.exists(depth_path) and os.path.exists(mask_path):
+                            self.samples.append({
+                                "obj_id": obj_id,
+                                "rgb_path": rgb_path,
+                                "depth_path": depth_path,
+                                "mask_path": mask_path,
+                                "cam_K": np.array(info_data[frame_idx]['cam_K']).reshape(3, 3),
+                                "cam_R": np.array(ann['cam_R_m2c']).reshape(3, 3),
+                                "cam_t": t_raw,
+                                "bbox": ann['obj_bb'],
+                                "depth_scale": info_data[frame_idx].get('depth_scale', 1.0)
+                            })
 
         # Augmentation Pipeline
         if transform:
@@ -224,12 +229,10 @@ class RgbdFusionNetDataset(Dataset):
         item = self.samples[idx]
         if self.split == 'val': np.random.seed(idx)
 
-        try:
-            rgb = Image.open(item["rgb_path"]).convert("RGB")
-            depth = cv2.imread(item["depth_path"], -1)
-            mask = cv2.imread(item["mask_path"], 0)
-        except Exception:
-            return self.__getitem__((idx + 1) % len(self))
+        # Loading logic
+        rgb = Image.open(item["rgb_path"]).convert("RGB")
+        depth = cv2.imread(item["depth_path"], -1)
+        mask = cv2.imread(item["mask_path"], 0)
 
         w_img, h_img = rgb.size
         bbox = self.jitter_bbox(item["bbox"], w_img, h_img)
