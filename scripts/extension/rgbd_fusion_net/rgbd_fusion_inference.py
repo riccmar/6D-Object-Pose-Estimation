@@ -99,14 +99,16 @@ def rgbd_fusion_inference(model_path, device='cpu', num_samples=1):
 
 
         # Draw Axes (Convert meters to mm for draw_pose)
-        img_full = cv2.imread(rgb_path)
-        img_full = cv2.cvtColor(img_full, cv2.COLOR_BGR2RGB)
+        img_full_bgr = cv2.imread(rgb_path)
+        
+        # Draw on BGR image first (as draw_pose expects BGR colors)
+        img_gt_bgr = img_full_bgr.copy()
+        img_gt_bgr = draw_pose(img_gt_bgr, cam_K, gt_R, gt_t * 1000.0)
+        img_gt = cv2.cvtColor(img_gt_bgr, cv2.COLOR_BGR2RGB)
 
-        img_gt = img_full.copy()
-        img_gt = draw_pose(img_gt, cam_K, gt_R, gt_t * 1000.0)
-
-        img_pred = img_full.copy()
-        img_pred = draw_pose(img_pred, cam_K, pred_R, pred_t * 1000.0)
+        img_pred_bgr = img_full_bgr.copy()
+        img_pred_bgr = draw_pose(img_pred_bgr, cam_K, pred_R, pred_t * 1000.0)
+        img_pred = cv2.cvtColor(img_pred_bgr, cv2.COLOR_BGR2RGB)
 
         # Plotting
         fig = plt.figure(figsize=(12, 8))
