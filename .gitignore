@@ -177,3 +177,5 @@ data/*
 
 # macOS specific
 .DS_Store
+
+test.txt
