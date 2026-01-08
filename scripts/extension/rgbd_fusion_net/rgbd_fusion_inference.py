@@ -97,7 +97,6 @@ def rgbd_fusion_inference(model_path, device='cpu', num_samples=1):
         # Rotation Error
         angle_err_deg = calculate_degree_error(pred_q, gt_q)
 
-
         # Draw Axes (Convert meters to mm for draw_pose)
         img_full_bgr = cv2.imread(rgb_path)
         
