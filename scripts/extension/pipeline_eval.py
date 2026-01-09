@@ -4,6 +4,7 @@ import argparse
 import gdown
 import numpy as np
 import torch
+import random
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -20,6 +21,14 @@ from dataset.dataset_baseline import LINEMOD_ID_MAP
 
 # Symmetric objects: 10 = Eggbox, 11 = Glue
 SYMMETRIC_IDS = [10, 11]
+
+def set_seed(seed=42):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    print(f"Seed set to: {seed}")
 
 def print_report(global_metrics, per_object_metrics, detection_failures, total_frames, symmetric_ids=SYMMETRIC_IDS):
     # Global Stats
@@ -129,6 +138,7 @@ def pipeline_evaluation(pipeline, val_loader, meshes, yolo_conf=0.25, refine_ite
             rot_err = compute_angular_error(gt_R, pred_R)
                 
             res_01d = 1 if err < threshold else 0
+
             res_2cm = 1 if err < 0.02 else 0
 
             per_object_metrics[obj_id]['full'].append((res_01d, res_2cm, err, rot_err))
@@ -137,6 +147,8 @@ def pipeline_evaluation(pipeline, val_loader, meshes, yolo_conf=0.25, refine_ite
     print_report(global_metrics, per_object_metrics, detection_failures, total_frames, symmetric_ids)
 
 if __name__ == "__main__":
+    set_seed(42)
+    
     parser = argparse.ArgumentParser()
     parser.add_argument('--yolo_path', type=str, required=True, help='Path to the trained YOLO or Google Drive URL')
     parser.add_argument('--rgbdfusion_path', type=str, required=True, help='Path to the trained Rgbd Fusion Model or Google Drive URL')

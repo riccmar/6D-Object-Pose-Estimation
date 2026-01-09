@@ -82,7 +82,8 @@ def project_dense_mesh(img, vertices, K, R, t, color=(0, 255, 0)):
         for p in valid_points:
             cv2.circle(overlay, tuple(p), 1, color, -1)
         
-        img = cv2.addWeighted(overlay, 0.7, img, 0.3, 0)
+        # 0.4 mesh points overlay, 0.6 original image
+        img = cv2.addWeighted(overlay, 0.4, img, 0.6, 0)
     except Exception as e:
         print(f"Error projecting mesh: {e}")
     return img
