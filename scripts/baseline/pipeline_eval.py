@@ -34,9 +34,9 @@ def print_report(global_metrics, per_object_metrics, detection_failures, total_f
     print(f"Total Samples Processed: {total_frames}")
     print(f"{'Metric Component':<30} | {'ADD-0.1d':<10} | {'Acc < 2cm':<10} | {'Mean ADD':<11} | {'Median ADD':<12} | {'Mean Rot Err':<12}")
     print("-" * 135)
-    print(f"{'1. Rotation Only (ResNet)':<30} | {g_acc_rot:>6.2f}%    | {g_acc2cm_rot:>6.2f}%    | {g_err_rot:>8.2f} mm | {g_med_rot:>8.2f} mm | {g_rot_err_rot:>8.2f} deg")
-    print(f"{'2. Translation Only (Pinhole)':<30} | {g_acc_trans:>6.2f}%    | {g_acc2cm_trans:>6.2f}%    | {g_err_trans:>8.2f} mm | {g_med_trans:>8.2f} mm | {g_rot_err_trans:>8.2f} deg")
-    print(f"{'3. Full Baseline System':<30} | {g_acc_full:>6.2f}%    | {g_acc2cm_full:>6.2f}%    | {g_err_full:>8.2f} mm | {g_med_full:>8.2f} mm | {g_rot_err_full:>8.2f} deg")
+    print(f"{'1. Rotation Only (ResNet)':<30} | {g_acc_rot:>6.2f}%    | {g_acc2cm_rot:>6.2f}%    | {g_err_rot:>8.2f} mm | {g_med_rot:>8.2f} mm | {g_rot_err_rot:>8.2f} °")
+    print(f"{'2. Translation Only (Pinhole)':<30} | {g_acc_trans:>6.2f}%    | {g_acc2cm_trans:>6.2f}%    | {g_err_trans:>8.2f} mm | {g_med_trans:>8.2f} mm | {g_rot_err_trans:>8.2f} °")
+    print(f"{'3. Full Baseline System':<30} | {g_acc_full:>6.2f}%    | {g_acc2cm_full:>6.2f}%    | {g_err_full:>8.2f} mm | {g_med_full:>8.2f} mm | {g_rot_err_full:>8.2f} °")
     print("-" * 135)
     print(f"Detection Failures: {detection_failures}/{total_frames} ({fail_rate:.1f}%)")
     print("="*135)
@@ -44,9 +44,10 @@ def print_report(global_metrics, per_object_metrics, detection_failures, total_f
     # Per Object Stats
     print("\n" + "="*165)
     print(f"PER-OBJECT BREAKDOWN")
+    print("(* indicates ADD-S metric was used)")
     print("="*165)
     print(f"{'ID':<4} {'Name':<12} | {'Count':<6} | {'Rot Only (ResNet)':<38} | {'Trans Only (Pinhole)':<38} | {'Baseline (Full)':<38} | {'Fail'}")
-    print(f"{'':<4} {'':<12} | {'':<6} | {'Acc<0.1d':<8} {'Mean(mm)':<9} {'Acc<2cm':<8} {'Rot(°)':<7} | {'Acc<0.1d':<8} {'Mean(mm)':<9} {'Acc<2cm':<8} {'Rot(°)':<7} | {'Acc<0.1d':<8} {'Mean(mm)':<9} {'Acc<2cm':<8} {'Rot(°)':<7} |")
+    print(f"{'':<4} {'':<12} | {'':<6} | {'Acc<0.1d':>9} {'Mean(mm)':>10} {'Acc<2cm':>9} {'Rot(°)':>7} | {'Acc<0.1d':>9} {'Mean(mm)':>10} {'Acc<2cm':>9} {'Rot(°)':>7} | {'Acc<0.1d':>9} {'Mean(mm)':>10} {'Acc<2cm':>9} {'Rot(°)':>7} |")
     print("-" * 165)
 
     for obj_id in sorted(per_object_metrics.keys()):
@@ -66,12 +67,11 @@ def print_report(global_metrics, per_object_metrics, detection_failures, total_f
         fail_p = (fails/total)*100 if total else 0
 
         print(f"{obj_id:<4} {disp_name:<12} | {total:<6} | "
-                f"{acc_rot:>6.1f}%  {err_rot:>6.1f}mm  {acc2cm_rot:>6.1f}%  {rot_err_rot:>5.1f}° | "
-                f"{acc_trans:>6.1f}%  {err_trans:>6.1f}mm  {acc2cm_trans:>6.1f}%  {rot_err_trans:>5.1f}° | "
-                f"{acc_full:>6.1f}%  {err_full:>6.1f}mm  {acc2cm_full:>6.1f}%  {rot_err_full:>5.1f}° | "
+                f"{acc_rot:>8.1f}% {err_rot:>8.1f}mm {acc2cm_rot:>8.1f}% {rot_err_rot:>6.1f}° | "
+                f"{acc_trans:>8.1f}% {err_trans:>8.1f}mm {acc2cm_trans:>8.1f}% {rot_err_trans:>6.1f}° | "
+                f"{acc_full:>8.1f}% {err_full:>8.1f}mm {acc2cm_full:>8.1f}% {rot_err_full:>6.1f}° | "
                 f"{fail_p:.0f}%")
     print("="*165)
-    print("(* indicates ADD-S metric was used)")
 
 def pipeline_evaluation(pipeline, val_loader, meshes, conf_threshold=0.5, symmetric_ids=SYMMETRIC_IDS):
     """
