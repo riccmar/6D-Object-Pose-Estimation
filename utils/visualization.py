@@ -65,3 +65,24 @@ def draw_pose(img, K, R, t, bbox_3d=None, label="", color=(0, 255, 255)):
             pass
 
     return img
+
+def project_dense_mesh(img, vertices, K, R, t, color=(0, 255, 0)):
+    try:
+        rvec, _ = cv2.Rodrigues(R)
+        if t.shape == (3,): t = t.reshape(3, 1)
+
+        img_points, _ = cv2.projectPoints(vertices, rvec, t, K, None)
+        img_points = img_points.reshape(-1, 2).astype(int)
+        
+        h, w, _ = img.shape
+        mask = (img_points[:, 0] >= 0) & (img_points[:, 0] < w) & (img_points[:, 1] >= 0) & (img_points[:, 1] < h)
+        valid_points = img_points[mask]
+
+        overlay = img.copy()
+        for p in valid_points:
+            cv2.circle(overlay, tuple(p), 1, color, -1)
+        
+        img = cv2.addWeighted(overlay, 0.7, img, 0.3, 0)
+    except Exception as e:
+        print(f"Error projecting mesh: {e}")
+    return img
