@@ -15,39 +15,39 @@ if project_root not in sys.path:
 from dataset.dataset_baseline import BaselineDataset, LINEMOD_ID_MAP
 from models.models_baseline import BaselinePoseSystem
 from utils.process_dataset import load_meshes
-from utils.evaluation_metrics import compute_add_metric, compute_adds_metric, calc_stats
+from utils.evaluation_metrics import compute_add_metric, compute_adds_metric, calc_stats, compute_angular_error
 
 # Symmetric objects: 10 = Eggbox, 11 = Glue
 SYMMETRIC_IDS = [10, 11]
 
 def print_report(global_metrics, per_object_metrics, detection_failures, total_frames, symmetric_ids=SYMMETRIC_IDS):
     # Global Stats
-    g_acc_rot, g_err_rot, g_med_rot = calc_stats(global_metrics['rot'])
-    g_acc_trans, g_err_trans, g_med_trans = calc_stats(global_metrics['trans'])
-    g_acc_full, g_err_full, g_med_full = calc_stats(global_metrics['full'])
+    g_acc_rot, g_err_rot, g_med_rot, g_acc2cm_rot, g_rot_err_rot = calc_stats(global_metrics['rot'])
+    g_acc_trans, g_err_trans, g_med_trans, g_acc2cm_trans, g_rot_err_trans = calc_stats(global_metrics['trans'])
+    g_acc_full, g_err_full, g_med_full, g_acc2cm_full, g_rot_err_full = calc_stats(global_metrics['full'])
 
     fail_rate = (detection_failures / total_frames) * 100 if total_frames > 0 else 0
 
-    print("\n" + "="*100)
+    print("\n" + "="*135)
     print("GLOBAL RESULTS (All Objects Averaged)")
-    print("="*100)
+    print("="*135)
     print(f"Total Samples Processed: {total_frames}")
-    print(f"{'Metric Component':<30} | {'ADD-0.1d':<10} | {'Mean ADD':<11} | {'Median ADD':<12}")
-    print("-" * 100)
-    print(f"{'1. Rotation Only (ResNet)':<30} | {g_acc_rot:>6.2f}%    | {g_err_rot:>8.2f} mm | {g_med_rot:>8.2f} mm")
-    print(f"{'2. Translation Only (Pinhole)':<30} | {g_acc_trans:>6.2f}%    | {g_err_trans:>8.2f} mm | {g_med_trans:>8.2f} mm")
-    print(f"{'3. Full Baseline System':<30} | {g_acc_full:>6.2f}%    | {g_err_full:>8.2f} mm | {g_med_full:>8.2f} mm")
-    print("-" * 100)
+    print(f"{'Metric Component':<30} | {'ADD-0.1d':<10} | {'Acc < 2cm':<10} | {'Mean ADD':<11} | {'Median ADD':<12} | {'Mean Rot Err':<12}")
+    print("-" * 135)
+    print(f"{'1. Rotation Only (ResNet)':<30} | {g_acc_rot:>6.2f}%    | {g_acc2cm_rot:>6.2f}%    | {g_err_rot:>8.2f} mm | {g_med_rot:>8.2f} mm | {g_rot_err_rot:>8.2f} deg")
+    print(f"{'2. Translation Only (Pinhole)':<30} | {g_acc_trans:>6.2f}%    | {g_acc2cm_trans:>6.2f}%    | {g_err_trans:>8.2f} mm | {g_med_trans:>8.2f} mm | {g_rot_err_trans:>8.2f} deg")
+    print(f"{'3. Full Baseline System':<30} | {g_acc_full:>6.2f}%    | {g_acc2cm_full:>6.2f}%    | {g_err_full:>8.2f} mm | {g_med_full:>8.2f} mm | {g_rot_err_full:>8.2f} deg")
+    print("-" * 135)
     print(f"Detection Failures: {detection_failures}/{total_frames} ({fail_rate:.1f}%)")
-    print("="*100)
+    print("="*135)
 
     # Per Object Stats
-    print("\n" + "="*105)
+    print("\n" + "="*165)
     print(f"PER-OBJECT BREAKDOWN")
-    print("="*105)
-    print(f"{'ID':<4} {'Name':<12} | {'Count':<6} | {'Rot Only (ResNet)':<20} | {'Trans Only (Pinhole)':<20} | {'Baseline (Full)':<20} | {'Fail'}")
-    print(f"{'':<4} {'':<12} | {'':<6} | {'ADD-0.1d':<9} {'Mean(mm)':<10} | {'ADD-0.1d':<9} {'Mean(mm)':<10} | {'ADD-0.1d':<9} {'Mean(mm)':<10} |")
-    print("-" * 105)
+    print("="*165)
+    print(f"{'ID':<4} {'Name':<12} | {'Count':<6} | {'Rot Only (ResNet)':<38} | {'Trans Only (Pinhole)':<38} | {'Baseline (Full)':<38} | {'Fail'}")
+    print(f"{'':<4} {'':<12} | {'':<6} | {'Acc<0.1d':<8} {'Mean(mm)':<9} {'Acc<2cm':<8} {'Rot(°)':<7} | {'Acc<0.1d':<8} {'Mean(mm)':<9} {'Acc<2cm':<8} {'Rot(°)':<7} | {'Acc<0.1d':<8} {'Mean(mm)':<9} {'Acc<2cm':<8} {'Rot(°)':<7} |")
+    print("-" * 165)
 
     for obj_id in sorted(per_object_metrics.keys()):
         data = per_object_metrics[obj_id]
@@ -57,20 +57,20 @@ def print_report(global_metrics, per_object_metrics, detection_failures, total_f
         # Add star to name if symmetric
         disp_name = f"{obj_name}{is_sym}"
 
-        acc_rot, err_rot, _ = calc_stats(data['rot'])
-        acc_trans, err_trans, _ = calc_stats(data['trans'])
-        acc_full, err_full, _ = calc_stats(data['full'])
+        acc_rot, err_rot, _, acc2cm_rot, rot_err_rot = calc_stats(data['rot'])
+        acc_trans, err_trans, _, acc2cm_trans, rot_err_trans = calc_stats(data['trans'])
+        acc_full, err_full, _, acc2cm_full, rot_err_full = calc_stats(data['full'])
 
         fails = data['failures']
         total = data['count']
         fail_p = (fails/total)*100 if total else 0
 
         print(f"{obj_id:<4} {disp_name:<12} | {total:<6} | "
-                f"{acc_rot:>6.1f}%  {err_rot:>8.1f}mm  | "
-                f"{acc_trans:>6.1f}%  {err_trans:>8.1f}mm  | "
-                f"{acc_full:>6.1f}%  {err_full:>8.1f}mm  | "
+                f"{acc_rot:>6.1f}%  {err_rot:>6.1f}mm  {acc2cm_rot:>6.1f}%  {rot_err_rot:>5.1f}° | "
+                f"{acc_trans:>6.1f}%  {err_trans:>6.1f}mm  {acc2cm_trans:>6.1f}%  {rot_err_trans:>5.1f}° | "
+                f"{acc_full:>6.1f}%  {err_full:>6.1f}mm  {acc2cm_full:>6.1f}%  {rot_err_full:>5.1f}° | "
                 f"{fail_p:.0f}%")
-    print("="*105)
+    print("="*165)
     print("(* indicates ADD-S metric was used)")
 
 def pipeline_evaluation(pipeline, val_loader, meshes, conf_threshold=0.5, symmetric_ids=SYMMETRIC_IDS):
@@ -144,25 +144,31 @@ def pipeline_evaluation(pipeline, val_loader, meshes, conf_threshold=0.5, symmet
             # We test ResNet module by giving it the cheat of perfect translation
             err_rot = calc_error(pred_R, gt_t, gt_R, gt_t)
             res_rot = 1 if err_rot < threshold else 0
+            res_2cm_rot = 1 if err_rot < 20.0 else 0
+            rot_error_rot = compute_angular_error(gt_R, pred_R)
 
-            per_object_metrics[obj_id]['rot'].append((res_rot, err_rot))
-            global_metrics['rot'].append((res_rot, err_rot))
+            per_object_metrics[obj_id]['rot'].append((res_rot, res_2cm_rot, err_rot, rot_error_rot))
+            global_metrics['rot'].append((res_rot, res_2cm_rot, err_rot, rot_error_rot))
 
             # 2. Translation Only (Gt Quaternion + Pinhole)
             # We test Pinhole module by giving it the cheat of perfect rotation
             err_trans = calc_error(gt_R, pred_t, gt_R, gt_t)
             res_trans = 1 if err_trans < threshold else 0
+            res_2cm_trans = 1 if err_trans < 20.0 else 0
+            rot_error_trans = 0.0
 
-            per_object_metrics[obj_id]['trans'].append((res_trans, err_trans))
-            global_metrics['trans'].append((res_trans, err_trans))
+            per_object_metrics[obj_id]['trans'].append((res_trans, res_2cm_trans, err_trans, rot_error_trans))
+            global_metrics['trans'].append((res_trans, res_2cm_trans, err_trans, rot_error_trans))
 
             # 3. Full Baseline (ResNet + Pinhole)
             # No cheats here, full prediction
             err_full = calc_error(pred_R, pred_t, gt_R, gt_t)
             res_full = 1 if err_full < threshold else 0
+            res_2cm_full = 1 if err_full < 20.0 else 0
+            rot_error_full = compute_angular_error(gt_R, pred_R)
 
-            per_object_metrics[obj_id]['full'].append((res_full, err_full))
-            global_metrics['full'].append((res_full, err_full))
+            per_object_metrics[obj_id]['full'].append((res_full, res_2cm_full, err_full, rot_error_full))
+            global_metrics['full'].append((res_full, res_2cm_full, err_full, rot_error_full))
     
     print_report(global_metrics, per_object_metrics, detection_failures, total_frames, symmetric_ids)
 

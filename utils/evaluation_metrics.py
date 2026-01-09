@@ -50,6 +50,17 @@ def compute_adds_metric(pts, R_gt, t_gt, R_pred, t_pred):
 
     return np.mean(distances)
 
+def compute_angular_error(R_gt, R_pred):
+    """
+    Computes angular error (in degrees) between two rotation matrices.
+    """
+    R_diff = np.dot(R_pred, R_gt.T)
+    trace = np.trace(R_diff)
+    val = (trace - 1.0) / 2.0
+    val = np.clip(val, -1.0, 1.0)
+    
+    return np.arccos(val) * (180 / np.pi)
+
 def calc_stats_rotation_only(data_dict):
     if not data_dict['deg']:
         return 0.0, 0.0, 0.0
@@ -57,21 +68,19 @@ def calc_stats_rotation_only(data_dict):
     return np.mean(data_dict['deg']), np.mean(data_dict['add']), np.mean(data_dict['acc']) * 100
 
 def calc_stats(data_list):
-    """Helper to compute Accuracy (<0.1d), Mean Error, and Median Error."""
+    """Helper to compute Accuracy (<0.1d), Mean Error, Median Error, Accuracy (<2cm), Mean Rot Error. Works with results in mm."""
     if not data_list:
-        return 0.0, 0.0, 0.0
+        return 0.0, 0.0, 0.0, 0.0, 0.0
+    
+    r1, r2, errs, rot_errs = zip(*data_list)
 
-    successes, errors = zip(*data_list)
-    acc = np.mean(successes) * 100
-    mean_err = np.mean(errors)
-    median_err = np.median(errors)
-
-    return acc, mean_err, median_err
+    return np.mean(r1)*100, np.mean(errs), np.median(errs), np.mean(r2)*100, np.mean(rot_errs)
 
 def calc_stats_ext(results_list):
+    """Helper to compute Accuracy (<0.1d), Mean Error, Median Error, Accuracy (<2cm), Mean Rot Error. Works with results in m."""
     if not results_list: 
-        return 0.0, 0.0, 0.0, 0.0
+        return 0.0, 0.0, 0.0, 0.0, 0.0
     
-    r1, r2, errs = zip(*results_list)
+    r1, r2, errs, rot_errs = zip(*results_list)
     
-    return np.mean(r1)*100, np.mean(errs)*1000, np.median(errs)*1000, np.mean(r2)*100
+    return np.mean(r1)*100, np.mean(errs)*1000, np.median(errs)*1000, np.mean(r2)*100, np.mean(rot_errs)

@@ -15,7 +15,7 @@ if project_root not in sys.path:
 from dataset.dataset_extension import RgbdFusionNetDataset, ExtensionPipelineDataset
 from models.models_extension import ExtensionPoseSystem
 from utils.process_dataset import load_meshes
-from utils.evaluation_metrics import compute_add_metric, compute_adds_metric, calc_stats_ext
+from utils.evaluation_metrics import compute_add_metric, compute_adds_metric, calc_stats_ext, compute_angular_error
 from dataset.dataset_baseline import LINEMOD_ID_MAP
 
 # Symmetric objects: 10 = Eggbox, 11 = Glue
@@ -23,7 +23,7 @@ SYMMETRIC_IDS = [10, 11]
 
 def print_report(global_metrics, per_object_metrics, detection_failures, total_frames, symmetric_ids=SYMMETRIC_IDS):
     # Global Stats
-    g_acc_01d, g_mean_err, g_med_err, g_acc_2cm = calc_stats_ext(global_metrics['full'])
+    g_acc_01d, g_mean_err, g_med_err, g_acc_2cm, g_mean_rot = calc_stats_ext(global_metrics['full'])
     fail_rate = (detection_failures / total_frames) * 100 if total_frames > 0 else 0
 
     print("\n" + "="*100)
@@ -35,14 +35,16 @@ def print_report(global_metrics, per_object_metrics, detection_failures, total_f
     print(f"Accuracy (< 0.1d):   {g_acc_01d:.2f}%")
     print(f"Mean Error: {g_mean_err:.2f} mm")
     print(f"Median Error: {g_med_err:.2f} mm")
+    print(f"Mean Rot Error: {g_mean_rot:.2f}°")
     print("="*100)
 
     # Per Object Stats
-    print("\n" + "="*112)
+    print("\n" + "="*100)
     print(f"PER-OBJECT BREAKDOWN")
-    print("="*112)
-    print(f"{'ID':<4} {'Name':<12} | {'Count':<6} | {'Acc(<2cm)':<10} {'Acc(<0.1d)':<10} {'Mean(mm)':<10} | {'Fail'}")
-    print("-" * 112)
+    print("(* = Symmetric Object, using ADD-S metric)")
+    print("="*100)
+    print(f"{'ID':<4} {'Name':<12} | {'Count':<6} | {'Acc(<2cm)':>10} {'Acc(<0.1d)':>10} {'Mean(mm)':>10} {'Rot(°)':>9} | {'Fail':>6}")
+    print("-" * 100)
 
     for obj_id in sorted(per_object_metrics.keys()):
         data = per_object_metrics[obj_id]
@@ -50,15 +52,14 @@ def print_report(global_metrics, per_object_metrics, detection_failures, total_f
         is_sym = "*" if obj_id in symmetric_ids else " "
         disp_name = f"{obj_name}{is_sym}"
 
-        acc_01d, err_full, _, acc_2cm = calc_stats_ext(data['full'])
+        acc_01d, err_full, _, acc_2cm, rot_err = calc_stats_ext(data['full'])
         fails = data['failures']
         total = data['count']
         fail_p = (fails/total)*100 if total else 0
 
         print(f"{obj_id:<4} {disp_name:<12} | {total:<6} | "
-                f"{acc_2cm:>9.1f}% {acc_01d:>9.1f}%  {err_full:>8.1f}mm  | "
-                f"{fail_p:.0f}%")
-    print("="*112)
+                f"{acc_2cm:>9.1f}% {acc_01d:>9.1f}% {err_full:>8.1f}mm {rot_err:>8.1f}° | {fail_p:>5.0f}%")
+    print("="*100)
 
 def pipeline_evaluation(pipeline, val_loader, meshes, yolo_conf=0.25, refine_iters=2, symmetric_ids=SYMMETRIC_IDS):
     per_object_metrics = {}
@@ -124,12 +125,14 @@ def pipeline_evaluation(pipeline, val_loader, meshes, yolo_conf=0.25, refine_ite
                 err = compute_adds_metric(mesh_pts, gt_R, gt_t, pred_R, pred_t)
             else:
                 err = compute_add_metric(mesh_pts, gt_R, gt_t, pred_R, pred_t)
+            
+            rot_err = compute_angular_error(gt_R, pred_R)
                 
             res_01d = 1 if err < threshold else 0
             res_2cm = 1 if err < 0.02 else 0
 
-            per_object_metrics[obj_id]['full'].append((res_01d, res_2cm, err))
-            global_metrics['full'].append((res_01d, res_2cm, err))
+            per_object_metrics[obj_id]['full'].append((res_01d, res_2cm, err, rot_err))
+            global_metrics['full'].append((res_01d, res_2cm, err, rot_err))
 
     print_report(global_metrics, per_object_metrics, detection_failures, total_frames, symmetric_ids)
 
