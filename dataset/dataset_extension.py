@@ -296,3 +296,87 @@ class RgbdFusionNetDataset(Dataset):
             "centroid": torch.tensor(centroid, dtype=torch.float32),
             "obj_id": item["obj_id"]
         }
+
+class ExtensionPipelineDataset(Dataset):
+    def __init__(self, dataset_root, split='val'):
+        self.dataset_root = dataset_root
+        self.split = split
+
+        self.data_dir = os.path.join(dataset_root, 'Linemod_preprocessed', 'data')
+        
+        self.samples = []
+        print(f"Initializing {split} dataset for Extension Pipeline Evaluation...")
+
+        if os.path.exists(self.data_dir):
+            obj_folders = sorted([f for f in os.listdir(self.data_dir)
+                                  if os.path.isdir(os.path.join(self.data_dir, f)) and f.isdigit()])
+
+            for obj_id_str in obj_folders:
+                obj_id = int(obj_id_str)
+                base_dir = os.path.join(self.data_dir, obj_id_str)
+                gt_path = os.path.join(base_dir, "gt.yml")
+                info_path = os.path.join(base_dir, "info.yml")
+
+                if not os.path.exists(gt_path) or not os.path.exists(info_path):
+                    continue
+
+                with open(gt_path, 'r') as f: 
+                    gt_data = yaml.safe_load(f)
+                with open(info_path, 'r') as f: 
+                    info_data = yaml.safe_load(f)
+
+                for frame_idx_str in gt_data.keys():
+                    frame_idx = int(frame_idx_str)
+
+                    # Hash Split (80% Train / 20% Val)
+                    unique_id = f"{obj_id}_{frame_idx}"
+                    hash_val = int(hashlib.md5(unique_id.encode()).hexdigest(), 16) % 100
+                    is_train = hash_val < 80
+
+                    if (split == 'train' and is_train) or (split == 'val' and not is_train):
+                        anns = gt_data[frame_idx_str]
+                        if not anns: 
+                            continue
+
+                        target_ann = None
+                        for item in anns:
+                            if item['obj_id'] == obj_id:
+                                target_ann = item
+                                break
+
+                        if target_ann is None: 
+                            continue
+
+                        ann = target_ann
+                        t_raw = np.array(ann['cam_t_m2c'])
+                        if np.linalg.norm(t_raw) > 1.0: 
+                            t_raw = t_raw / 1000.0
+
+                        rgb_path = os.path.join(base_dir, "rgb", f"{frame_idx:04d}.png")
+                        depth_path = os.path.join(base_dir, "depth", f"{frame_idx:04d}.png")
+                        
+                        if os.path.exists(rgb_path) and os.path.exists(depth_path):
+                            self.samples.append({
+                                "obj_id": obj_id,
+                                "rgb_path": rgb_path,
+                                "depth_path": depth_path,
+                                "cam_K": np.array(info_data[frame_idx]['cam_K']).reshape(3, 3),
+                                "cam_R": np.array(ann['cam_R_m2c']).reshape(3, 3),
+                                "cam_t": t_raw,
+                                "depth_scale": info_data[frame_idx].get('depth_scale', 1.0)
+                            })
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __getitem__(self, idx):
+        item = self.samples[idx]
+        return {
+            "rgb_path": item["rgb_path"],
+            "depth_path": item["depth_path"],
+            "obj_id": item["obj_id"],
+            "cam_K": torch.tensor(item["cam_K"], dtype=torch.float32),
+            "gt_R": torch.tensor(item["cam_R"], dtype=torch.float32),
+            "gt_t": torch.tensor(item["cam_t"], dtype=torch.float32),
+            "depth_scale": item["depth_scale"]
+        }

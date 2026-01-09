@@ -68,3 +68,10 @@ def calc_stats(data_list):
 
     return acc, mean_err, median_err
 
+def calc_stats_ext(results_list):
+    if not results_list: 
+        return 0.0, 0.0, 0.0, 0.0
+    
+    r1, r2, errs = zip(*results_list)
+    
+    return np.mean(r1)*100, np.mean(errs)*1000, np.median(errs)*1000, np.mean(r2)*100
