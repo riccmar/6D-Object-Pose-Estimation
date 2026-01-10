@@ -4,6 +4,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torchvision import models, transforms
+import torch.nn.functional as F
 from scipy.spatial.transform import Rotation as R
 from ultralytics import YOLO
 
@@ -23,7 +24,7 @@ class RotationResNet(nn.Module):
 
     def forward(self, x):
         x = self.backbone(x)
-        # x = F.normalize(x, p=2, dim=1)
+        x = F.normalize(x, p=2, dim=1)
 
         return x
 
