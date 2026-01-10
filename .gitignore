@@ -174,3 +174,9 @@ cython_debug/
 .pypirc
 
 data/*
+
+# macOS specific
+.DS_Store
+
+iter.txt
+result.txt
