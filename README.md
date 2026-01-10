@@ -12,6 +12,8 @@ You will adapt and implement the methodology, starting from pose prediction and 
 
 ## Usage
 
+**Note:** All scripts and commands must be run from the root directory of the repository `aml_project/`.
+
 ### 1. Setup
 Install dependencies and download the dataset (data will be saved in `data/linemod`).
 ```bash
