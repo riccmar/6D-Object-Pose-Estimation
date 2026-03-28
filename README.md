@@ -1,4 +1,6 @@
-# Advanced Machine Learning Project
+# 6D Object Pose Estimation
+
+## Advanced Machine Learning Project
 
 ## Members
 - Francesco Palmisani
